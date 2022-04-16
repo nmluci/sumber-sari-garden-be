@@ -15,6 +15,6 @@ func InitController(globalRouter *mux.Router, db *sql.DB) {
 	router := globalRouter.NewRoute().Subrouter()
 
 	pingService := pingServicePkg.ProvidePingService()
-	pingController := pingController.ProvideMsibController(router, pingService)
+	pingController := pingController.ProvidePingController(router, pingService)
 	pingController.InitController()
 }

@@ -28,7 +28,7 @@ func (pc *PingController) InitController() {
 	routes.HandleFunc("", pc.PingHandler).Methods(http.MethodGet)
 }
 
-func ProvideMsibController(r *mux.Router, ps api.PingService) *PingController {
+func ProvidePingController(r *mux.Router, ps api.PingService) *PingController {
 	return &PingController{
 		r: r,
 		ps: ps,
