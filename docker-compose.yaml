@@ -1,0 +1,19 @@
+version: '3.9'
+
+services:
+  db:
+    image: mysql:8
+    container_name: sumber_sari_db
+    env_file:
+      - .env
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+    ports:
+      - "${DB_PORT}:3306"
+    volumes:
+      - sumber_sari_volume:/var/lib/mysql
+
+volumes:
+  sumber_sari_volume:

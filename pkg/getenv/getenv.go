@@ -20,6 +20,7 @@ func GetEnvironmentVariable() (map[string]string) {
 	envVariable["DB_USERNAME"] = os.Getenv("DB_USERNAME")
 	envVariable["DB_PASSWORD"] = os.Getenv("DB_PASSWORD")
 	envVariable["DB_ADDRESS"] = os.Getenv("DB_ADDRESS")
+	envVariable["DB_PORT"] = os.Getenv("DB_PORT")
 	envVariable["DB_NAME"] = os.Getenv("DB_NAME")
 	envVariable["WHITELISTED_URLS"] = os.Getenv("WHITELISTED_URLS")
 

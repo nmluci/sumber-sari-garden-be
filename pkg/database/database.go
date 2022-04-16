@@ -9,30 +9,26 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-func GetDatabase(dbUsername, dbPassword, dbAddress, dbName string) *sql.DB {
+func GetDatabase(dbUsername, dbPassword, dbAddress, dbPort, dbName string) *sql.DB {
 	log.Println("INFO GetDatabase database connection: starting database connection process")
 
-	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true",
-																dbUsername, dbPassword, dbAddress, dbName)
+	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
+																dbUsername, dbPassword, dbAddress, dbPort, dbName)
 
 	var db *sql.DB
 
 	for {
 		db, err := sql.Open("mysql", dataSourceName)
-		if err != nil {
-			log.Printf("ERROR GetDatabase sql open connection fatal error: %v\n", err)
+		if pingErr := db.Ping(); err != nil || pingErr != nil {
+			if err != nil {
+				log.Printf("ERROR GetDatabase sql open connection fatal error: %v\n", err)
+			} else if pingErr != nil {
+				log.Printf("ERROR GetDatabase sql open connection fatal error: %v\n", pingErr)
+			}
 			log.Println("INFO GetDatabase re-attempting to reconnect to databse")
 			time.Sleep(1 * time.Second)
 			continue
 		}
-
-		if err = db.Ping(); err != nil {
-			log.Printf("ERROR GetDatabase sql open connection fatal error: %v\n", err)
-			log.Println("INFO GetDatabase re-attempting to reconnect to databse")
-			time.Sleep(1 * time.Second)
-			continue
-		}
-
 		break
 	}
 
@@ -45,6 +41,7 @@ func InitDatabaseFromEnvVariable(envVariable map[string]string) *sql.DB {
 		envVariable["DB_USERNAME"],
 		envVariable["DB_PASSWORD"],
 		envVariable["DB_ADDRESS"],
+		envVariable["DB_PORT"],
 		envVariable["DB_NAME"],
 	)
 }
