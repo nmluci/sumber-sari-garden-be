@@ -1,6 +1,6 @@
 DROP TABLE IF EXISTS order_detail;
 
-DROP TABLE IF EXISTS order;
+DROP TABLE IF EXISTS order_data;
 
 DROP TABLE IF EXISTS order_status;
 
@@ -11,5 +11,7 @@ DROP TABLE IF EXISTS product;
 DROP TABLE IF EXISTS product_category;
 
 DROP TABLE IF EXISTS user;
+
+DROP TABLE IF EXISTS user_info;
 
 DROP TABLE IF EXISTS user_role;
