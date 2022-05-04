@@ -4,8 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/gorilla/mux"
-	pingController "github.com/nmluci/sumber-sari-garden/internal/ping/controller"
-	pingServicePkg "github.com/nmluci/sumber-sari-garden/internal/ping/service/impl"
+	"github.com/nmluci/sumber-sari-garden/internal/ping"
 	"github.com/nmluci/sumber-sari-garden/pkg/middleware"
 )
 
@@ -14,7 +13,7 @@ func InitController(globalRouter *mux.Router, db *sql.DB) {
 
 	router := globalRouter.NewRoute().Subrouter()
 
-	pingService := pingServicePkg.ProvidePingService()
-	pingController := pingController.ProvidePingController(router, pingService)
-	pingController.InitController()
+	pingService := ping.NewPingService()
+	pingController := ping.NewPingHandler(router, pingService)
+	pingController.InitHandler()
 }
