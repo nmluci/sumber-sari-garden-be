@@ -13,4 +13,5 @@ type UserCred struct {
 	Email    string
 	Password string
 	UserID   *int64
+	UserRole *int64
 }
