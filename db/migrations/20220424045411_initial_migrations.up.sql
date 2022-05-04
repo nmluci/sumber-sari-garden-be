@@ -11,18 +11,18 @@ CREATE TABLE IF NOT EXISTS user_info (
     last_name VARCHAR(255),
     phone VARCHAR(255),
     address VARCHAR(255),
-    role_id INT NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW() ON UPDATE NOW(),
-    CONSTRAINT `fk_user_role` FOREIGN KEY(role_id) REFERENCES user_role(id)
 );
 
 CREATE TABLE IF NOT EXISTS user (
     id INT NOT NULL PRIMARY KEY,
     user_id INT UNIQUE NOT NULL,
+    role_id INT NOT NULL DEFAULT 1,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     CONSTRAINT `fk_auth_user` FOREIGN KEY(user_id) REFERENCES user_info(id)
+    CONSTRAINT `fk_user_role` FOREIGN KEY(role_id) REFERENCES user_role(id)
 );
 
 CREATE TABLE IF NOT EXISTS product_category (
