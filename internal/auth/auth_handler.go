@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -18,7 +19,7 @@ type AuthHandler struct {
 func (ac *AuthHandler) InitHandler() {
 	routes := ac.r.PathPrefix(constant.AUTH_API_PATH).Subrouter()
 	routes.HandleFunc("/register", ac.RegisterNewUser()).Methods(http.MethodPost, http.MethodOptions)
-	routes.HandleFunc("/login", ac.RegisterNewUser()).Methods(http.MethodPost, http.MethodOptions)
+	routes.HandleFunc("/login", ac.LoginUser()).Methods(http.MethodPost, http.MethodOptions)
 }
 
 func NewAuthHandler(r *mux.Router, as AuthService) *AuthHandler {
@@ -31,6 +32,7 @@ func (auth *AuthHandler) RegisterNewUser() http.HandlerFunc {
 
 		err := json.NewDecoder(r.Body).Decode(data)
 		if err != nil {
+			log.Printf("[RegisterNewUser] failed to parsed JSON data, err => %+v", err)
 			responseutil.WriteErrorResponse(w, err)
 			return
 		}
@@ -51,6 +53,7 @@ func (auth *AuthHandler) LoginUser() http.HandlerFunc {
 
 		err := json.NewDecoder(r.Body).Decode(data)
 		if err != nil {
+			log.Printf("[LoginUser] failed to parsed JSON data, err => %+v", err)
 			responseutil.WriteErrorResponse(w, err)
 			return
 		}

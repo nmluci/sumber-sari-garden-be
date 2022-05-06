@@ -1,9 +1,10 @@
 package dto
 
 import (
-	"errors"
+	"log"
 
 	"github.com/nmluci/sumber-sari-garden/internal/entity"
+	"github.com/nmluci/sumber-sari-garden/pkg/errors"
 )
 
 type UserSignInResponse struct {
@@ -14,8 +15,9 @@ type UserSignInResponse struct {
 }
 
 func NewUserSignInResponse(cred *entity.UserCred, info *entity.UserInfo) (res *UserSignInResponse, err error) {
-	if cred != nil || info != nil {
-		err = errors.New("user has incompleted data")
+	if cred == nil || info == nil {
+		log.Printf("[NewUserSignInResponse] failed to encode response data due to inconsisted data")
+		err = errors.ErrInvalidResources
 		return
 	}
 
