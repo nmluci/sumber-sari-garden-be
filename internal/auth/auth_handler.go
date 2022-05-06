@@ -32,7 +32,7 @@ func (auth *AuthHandler) RegisterNewUser() http.HandlerFunc {
 
 		err := json.NewDecoder(r.Body).Decode(data)
 		if err != nil {
-			log.Printf("[RegisterNewUser] failed to parsed JSON data, err => %+v", err)
+			log.Printf("[RegisterNewUser] failed to parsed JSON data, err => %+v\n", err)
 			responseutil.WriteErrorResponse(w, err)
 			return
 		}
@@ -53,7 +53,7 @@ func (auth *AuthHandler) LoginUser() http.HandlerFunc {
 
 		err := json.NewDecoder(r.Body).Decode(data)
 		if err != nil {
-			log.Printf("[LoginUser] failed to parsed JSON data, err => %+v", err)
+			log.Printf("[LoginUser] failed to parsed JSON data, err => %+v\n", err)
 			responseutil.WriteErrorResponse(w, err)
 			return
 		}
