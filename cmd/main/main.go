@@ -1,18 +1,40 @@
 package main
 
 import (
+	"log"
+	"strings"
+
+	"github.com/gorilla/mux"
+	"github.com/nmluci/sumber-sari-garden/internal/global/config"
+	"github.com/nmluci/sumber-sari-garden/internal/global/middleware"
+	"github.com/nmluci/sumber-sari-garden/internal/global/router"
+	"github.com/nmluci/sumber-sari-garden/internal/global/util/httputil"
 	"github.com/nmluci/sumber-sari-garden/pkg/database"
-	"github.com/nmluci/sumber-sari-garden/pkg/getenv"
-	"github.com/nmluci/sumber-sari-garden/pkg/router/controller"
-	globalRouter "github.com/nmluci/sumber-sari-garden/pkg/router/global"
-	"github.com/nmluci/sumber-sari-garden/pkg/server"
 )
 
 func main() {
-	envVariable := getenv.GetEnvironmentVariable()
-	db := database.InitDatabaseFromEnvVariable(envVariable)
-	r := globalRouter.InitGlobalRouter(envVariable["WHITELISTED_URLS"])
-	controller.InitController(r, db)
-	s := server.ProvideServer(envVariable["SERVER_ADDRESS"], r)
-	s.ListerAndServe()
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	log.Println("[main] starting server")
+	config.Init()
+
+	conf := config.GetConfig()
+	root := mux.NewRouter()
+	db := database.Init()
+
+	arrayWhitelistedUrls := strings.Split(conf.WhitelistUrl, ",")
+	mapWhitelistedUrls := make(map[string]bool)
+
+	for _, v := range arrayWhitelistedUrls {
+		mapWhitelistedUrls[v] = true
+	}
+
+	root.Use(middleware.ErrorHandlingMiddleware)
+	root.Use(middleware.CorsMiddleware(mapWhitelistedUrls))
+	root.Use(middleware.ContentTypeMiddleware)
+
+	router.Init(root, db)
+
+	httputil.ProvideServer(conf.ServerAddress, root).ListerAndServe()
+	log.Println("[main] stopping server gracefully")
 }

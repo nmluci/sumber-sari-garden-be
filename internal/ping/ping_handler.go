@@ -5,7 +5,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/nmluci/sumber-sari-garden/internal/constant"
-	"github.com/nmluci/sumber-sari-garden/pkg/entity/response"
+	"github.com/nmluci/sumber-sari-garden/internal/global/util/responseutil"
 )
 
 type PingHandler struct {
@@ -24,9 +24,5 @@ func NewPingHandler(r *mux.Router, ps PingService) *PingHandler {
 
 func (pc PingHandler) PingHandler(w http.ResponseWriter, r *http.Request) {
 	res := pc.ps.Ping(r.Context())
-	response.NewBaseResponse(
-		200,
-		response.RESPONSE_SUCCESS_MESSAGE,
-		nil,
-		res).SendResponse(&w)
+	responseutil.WriteSuccessResponse(w, http.StatusOK, res)
 }

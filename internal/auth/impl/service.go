@@ -17,7 +17,7 @@ func NewAuthService(repo AuthRepository) *AuthServiceImpl {
 	return &AuthServiceImpl{repo: repo}
 }
 
-func (auth AuthServiceImpl) RegisterNewUser(ctx context.Context, res dto.UserRegistrationRequest) (err error) {
+func (auth AuthServiceImpl) RegisterNewUser(ctx context.Context, res *dto.UserRegistrationRequest) (err error) {
 	userInfo, userCred := res.ToEntity()
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(userCred.Password), bcrypt.DefaultCost)
@@ -26,19 +26,19 @@ func (auth AuthServiceImpl) RegisterNewUser(ctx context.Context, res dto.UserReg
 		return
 	}
 
-	userID, err := auth.repo.StoreUserInfo(ctx, userInfo)
+	userCred.Password = string(hashed)
+	userID, err := auth.repo.StoreUserCred(ctx, *userCred)
 	if err != nil {
 		return
 	}
 
-	userCred.Password = string(hashed)
-	userCred.UserID = &userID
-	err = auth.repo.StoreUserCred(ctx, userCred)
+	userInfo.UserID = userID
+	err = auth.repo.StoreUserInfo(ctx, *userInfo)
 
 	return
 }
 
-func (auth AuthServiceImpl) LoginUser(ctx context.Context, res dto.UserSignIn) (data *dto.UserSignInResponse, err error) {
+func (auth AuthServiceImpl) LoginUser(ctx context.Context, res *dto.UserSignIn) (data *dto.UserSignInResponse, err error) {
 	cred := res.ToEntity()
 
 	userCred, err := auth.repo.GetCredByEmail(ctx, cred.Email)
@@ -52,7 +52,7 @@ func (auth AuthServiceImpl) LoginUser(ctx context.Context, res dto.UserSignIn) (
 		return
 	}
 
-	userInfo, err := auth.repo.GetUserInfoByID(ctx, *userCred.UserID)
+	userInfo, err := auth.repo.GetUserInfoByID(ctx, userCred.UserID)
 	if err != nil {
 		return
 	}

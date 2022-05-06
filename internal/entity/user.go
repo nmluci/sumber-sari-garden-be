@@ -6,12 +6,13 @@ type UserInfo struct {
 	Phone     string
 	Address   string
 	RoleName  string
-	RoleID    *int64
+	UserID    int64
+	RoleID    int64
 }
 
 type UserCred struct {
 	Email    string
 	Password string
-	UserID   *int64
-	UserRole *int64
+	UserID   int64
+	UserRole int64
 }

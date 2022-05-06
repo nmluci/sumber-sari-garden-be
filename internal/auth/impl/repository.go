@@ -6,11 +6,12 @@ import (
 	"log"
 
 	"github.com/nmluci/sumber-sari-garden/internal/entity"
+	"github.com/nmluci/sumber-sari-garden/pkg/database"
 )
 
 type AuthRepository interface {
-	StoreUserInfo(ctx context.Context, data *entity.UserInfo) (userID int64, err error)
-	StoreUserCred(ctx context.Context, data *entity.UserCred) (err error)
+	StoreUserInfo(ctx context.Context, data entity.UserInfo) (err error)
+	StoreUserCred(ctx context.Context, data entity.UserCred) (userID int64, err error)
 	GetCredByEmail(ctx context.Context, email string) (usr *entity.UserCred, err error)
 	GetUserInfoByID(ctx context.Context, userID int64) (usr *entity.UserInfo, err error)
 }
@@ -19,50 +20,50 @@ type authRepositoryImpl struct {
 	db *sql.DB
 }
 
-func NewAuthRepository(db *sql.DB) *authRepositoryImpl {
-	return &authRepositoryImpl{db: db}
+func NewAuthRepository(db *database.DatabaseClient) *authRepositoryImpl {
+	return &authRepositoryImpl{db: db.DB}
 }
 
-const (
-	STORE_USER_INFO    = `INSERT INTO user_info(first_name, last_name, phone, address) VALUES (?, ?, ?, ?);`
-	STORE_USER_CRED    = `INSERT INTO user(user_id, email, password) VALUES (?, ?, ?);`
-	FIND_CRED_BY_EMAIL = `SELECT user_id, email, password, role_id FROM user WHERE email=?;`
-	FIND_USER_BY_ID    = `SELECT first_name, last_name, phone, address FROM user WHERE id=?;`
+var (
+	STORE_USER_INFO    string = `INSERT INTO user_info(user_id, first_name, last_name, phone, address) VALUES (?, ?, ?, ?, ?)`
+	STORE_USER_CRED    string = `INSERT INTO user (email, password) VALUES (?, ?);`
+	FIND_CRED_BY_EMAIL string = `SELECT user_id, email, password, role_id FROM user WHERE email=?;`
+	FIND_USER_BY_ID    string = `SELECT first_name, last_name, phone, address FROM user WHERE id=?;`
 )
 
-func (auth *authRepositoryImpl) StoreUserInfo(ctx context.Context, data *entity.UserInfo) (userID int64, err error) {
-	res, err := auth.db.ExecContext(ctx, STORE_USER_INFO, data.FirstName, data.LastName, data.Phone, data.Address)
+func (auth authRepositoryImpl) StoreUserInfo(ctx context.Context, data entity.UserInfo) (err error) {
+	_, err = auth.db.ExecContext(ctx, STORE_USER_INFO, data.UserID, data.FirstName, data.LastName, data.Phone, data.Address)
 	if err != nil {
 		log.Printf("[StoreUserInfo] err: %v\n", err)
 		return
 	}
 
+	return
+}
+
+func (auth authRepositoryImpl) StoreUserCred(ctx context.Context, data entity.UserCred) (userID int64, err error) {
+	stmt, err := auth.db.PrepareContext(ctx, STORE_USER_CRED)
+	if err != nil {
+		log.Printf("[StoreUserCred] err: %v\n", err)
+		return
+	}
+
+	res, err := stmt.ExecContext(ctx, data.Email, data.Password)
+	if err != nil {
+		log.Printf("[StoreUserCred] err: %v\n", err)
+		return
+	}
+
 	userID, err = res.LastInsertId()
 	if err != nil {
-		log.Printf("[StoreUserInfo] err: %v\n", err)
+		log.Printf("[StoreUserCred] err: %v\n", err)
 		return 0, err
 	}
 
 	return
 }
 
-func (auth *authRepositoryImpl) StoreUserCred(ctx context.Context, data *entity.UserCred) (err error) {
-	res, err := auth.db.ExecContext(ctx, STORE_USER_CRED, data.UserID, data.Email, data.Password)
-	if err != nil {
-		log.Printf("[StoreUserCred] err: %v\n", err)
-		return
-	}
-
-	_, err = res.LastInsertId()
-	if err != nil {
-		log.Printf("[StoreUserCred] err: %v\n", err)
-		return
-	}
-
-	return
-}
-
-func (auth *authRepositoryImpl) GetCredByEmail(ctx context.Context, email string) (usr *entity.UserCred, err error) {
+func (auth authRepositoryImpl) GetCredByEmail(ctx context.Context, email string) (usr *entity.UserCred, err error) {
 	res := auth.db.QueryRowContext(ctx, FIND_CRED_BY_EMAIL, email)
 	usr, err = mapCredToEntity(res)
 	if err != nil {
@@ -73,7 +74,7 @@ func (auth *authRepositoryImpl) GetCredByEmail(ctx context.Context, email string
 	return
 }
 
-func (auth *authRepositoryImpl) GetUserInfoByID(ctx context.Context, userID int64) (usr *entity.UserInfo, err error) {
+func (auth authRepositoryImpl) GetUserInfoByID(ctx context.Context, userID int64) (usr *entity.UserInfo, err error) {
 	res := auth.db.QueryRowContext(ctx, FIND_USER_BY_ID, userID)
 	usr, err = mapUserInfoToEntity(res)
 	if err != nil {

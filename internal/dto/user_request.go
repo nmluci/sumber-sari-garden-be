@@ -1,13 +1,15 @@
 package dto
 
-import "github.com/nmluci/sumber-sari-garden/internal/entity"
+import (
+	"github.com/nmluci/sumber-sari-garden/internal/entity"
+)
 
 type UserRegistrationRequest struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Phone     string `json:"phone"`
 	Address   string `json:"address"`
-	Email     string `json:"username"`
+	Email     string `json:"email"`
 	Password  string `json:"password"`
 }
 

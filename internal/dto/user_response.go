@@ -23,7 +23,7 @@ func NewUserSignInResponse(cred *entity.UserCred, info *entity.UserInfo) (res *U
 		FirstName: info.FirstName,
 		LastName:  info.LastName,
 		Email:     cred.Email,
-		RoleID:    *cred.UserRole,
+		RoleID:    cred.UserRole,
 	}
 
 	return
