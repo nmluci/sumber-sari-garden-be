@@ -20,9 +20,9 @@ type ProductResponse struct {
 
 type ProductsResponse struct {
 	Products []*ProductResponse `json:"products"`
-	Limit    int64              `json:"limit"`
-	Offset   int64              `json:"offset"`
-	Total    int64              `json:"total"`
+	Limit    uint64             `json:"limit"`
+	Offset   uint64             `json:"offset"`
+	Total    uint64             `json:"total"`
 }
 
 type CategoryResponse struct {
@@ -53,14 +53,14 @@ func NewProductResponse(product *entity.Product, cat *entity.ProductCategory) (r
 	return
 }
 
-func NewProductsResponse(items entity.ProductDetails, limit int64, offset int64, total int64) (res *ProductsResponse, err error) {
+func NewProductsResponse(items entity.ProductDetails, limit uint64, offset uint64, total uint64) (res ProductsResponse, err error) {
 	if items == nil {
 		log.Printf("[NewProductsResponse] failed to encode response data due to incomplete data")
 		err = errors.ErrInvalidResources
 		return
 	}
 
-	res = &ProductsResponse{
+	res = ProductsResponse{
 		Limit:  limit,
 		Offset: offset,
 		Total:  total,
@@ -78,6 +78,41 @@ func NewProductsResponse(items entity.ProductDetails, limit int64, offset int64,
 			Description:  itm.Description,
 		}
 		res.Products = append(res.Products, temp)
+	}
+
+	return
+}
+
+func NewCategoryResponse(cat *entity.ProductCategory) (res *CategoryResponse, err error) {
+	if cat == nil {
+		log.Printf("[NewCategoryResponse] failed to encode response data due to incomplete data")
+		err = errors.ErrInvalidResources
+		return
+	}
+
+	res = &CategoryResponse{
+		ID:   cat.ID,
+		Name: cat.Name,
+	}
+
+	return
+}
+
+func NewCategoriesResponse(items entity.ProductCategories) (res CategoriesResponse, err error) {
+	if items == nil {
+		log.Printf("[NewCategoriesResponse] failed to encode response data due to incomplete data")
+		err = errors.ErrInvalidResources
+		return
+	}
+
+	res = CategoriesResponse{}
+
+	for _, itm := range items {
+		temp := &CategoryResponse{
+			ID:   itm.ID,
+			Name: itm.Name,
+		}
+		res = append(res, temp)
 	}
 
 	return

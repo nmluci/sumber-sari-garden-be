@@ -9,3 +9,9 @@ CREATE TRIGGER `trig_add_trx` AFTER UPDATE ON order_data
             UPDATE product p SET p.qty = p.qty - p_qty WHERE p.id = p_id;
             END IF;
     END;
+
+CREATE TRIGGER `trig_delete_category` AFTER DELETE ON product_category
+    FOR EACH ROW
+    BEGIN
+        UPDATE product p SET p.category_id=1 WHERE p.category_id=OLD.id;
+    END;

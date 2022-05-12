@@ -27,3 +27,7 @@ type ProductDetail struct {
 }
 
 type ProductDetails []*ProductDetail
+
+type Products []*Product
+
+type ProductCategories []*ProductCategory
