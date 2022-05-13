@@ -15,27 +15,29 @@ import (
 
 type ProductHandler struct {
 	r  *mux.Router
+	p  *mux.Router
 	ps ProductService
 }
 
 func (ps *ProductHandler) InitHandler() {
 	routes := ps.r.PathPrefix(constant.INVENTORY_API_PATH).Subrouter()
+	protected := routes.NewRoute().Subrouter()
 	// Products
 	routes.HandleFunc("/products", ps.GetAllProduct()).Methods(http.MethodGet, http.MethodOptions)
-	routes.HandleFunc("/products", ps.StoreNewProduct()).Methods(http.MethodPost, http.MethodOptions)
 	routes.HandleFunc("/products/{id}", ps.GetProductByID()).Methods(http.MethodGet, http.MethodOptions)
-	routes.HandleFunc("/products/{id}", ps.UpdateProduct()).Methods(http.MethodPatch, http.MethodOptions)
-	routes.HandleFunc("/products/{id}", ps.DeleteProduct()).Methods(http.MethodDelete, http.MethodOptions)
+	protected.HandleFunc("/products", ps.StoreNewProduct()).Methods(http.MethodPost, http.MethodOptions)
+	protected.HandleFunc("/products/{id}", ps.UpdateProduct()).Methods(http.MethodPatch, http.MethodOptions)
+	protected.HandleFunc("/products/{id}", ps.DeleteProduct()).Methods(http.MethodDelete, http.MethodOptions)
 
 	// Product Categories
 	routes.HandleFunc("/category", ps.GetAllCategory()).Methods(http.MethodGet, http.MethodOptions)
-	routes.HandleFunc("/category", ps.StoreNewCategory()).Methods(http.MethodPost, http.MethodOptions)
-	routes.HandleFunc("/category/{id}", ps.UpdateCategory()).Methods(http.MethodPatch, http.MethodOptions)
-	routes.HandleFunc("/category/{id}", ps.DeleteCategory()).Methods(http.MethodDelete, http.MethodOptions)
+	protected.HandleFunc("/category", ps.StoreNewCategory()).Methods(http.MethodPost, http.MethodOptions)
+	protected.HandleFunc("/category/{id}", ps.UpdateCategory()).Methods(http.MethodPatch, http.MethodOptions)
+	protected.HandleFunc("/category/{id}", ps.DeleteCategory()).Methods(http.MethodDelete, http.MethodOptions)
 }
 
-func NewProductHandler(r *mux.Router, ps ProductService) *ProductHandler {
-	return &ProductHandler{r: r, ps: ps}
+func NewProductHandler(r *mux.Router, p *mux.Router, ps ProductService) *ProductHandler {
+	return &ProductHandler{r: r, p: p, ps: ps}
 }
 
 func (prd *ProductHandler) GetAllProduct() http.HandlerFunc {

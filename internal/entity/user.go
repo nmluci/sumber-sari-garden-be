@@ -16,3 +16,10 @@ type UserCred struct {
 	UserID   int64
 	UserRole int64
 }
+
+type UserContext struct {
+	UserID int64
+	Priv   int64
+}
+
+type AuthCtxKey string

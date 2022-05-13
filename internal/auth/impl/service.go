@@ -2,9 +2,14 @@ package impl
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/nmluci/sumber-sari-garden/internal/dto"
+	"github.com/nmluci/sumber-sari-garden/internal/entity"
+	"github.com/nmluci/sumber-sari-garden/internal/global/config"
 	"github.com/nmluci/sumber-sari-garden/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -72,4 +77,64 @@ func (auth AuthServiceImpl) LoginUser(ctx context.Context, res *dto.UserSignIn) 
 	}
 
 	return dto.NewUserSignInResponse(userCred, userInfo)
+}
+
+func (auth AuthServiceImpl) FindUserByAccessToken(ctx context.Context, accessToken string) (*entity.UserCred, error) {
+	config := config.GetConfig()
+
+	token, err := jwt.Parse(accessToken, func(t *jwt.Token) (interface{}, error) {
+		if method, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("signing method invalid")
+		} else if method != config.JWT_SIGNING_METHOD {
+			return nil, fmt.Errorf("signin method invalid")
+		}
+		return config.JWT_SIGNATURE_KEY, nil
+	})
+
+	if err != nil {
+		log.Printf("[FindUserByAccessToken] error: %v\n", err)
+		return nil, errors.ErrTokenExpired
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		log.Printf("[FindUserByAccessToken] error: %v\n", err)
+		return nil, err
+	}
+
+	data := claims["data"].(map[string]interface{})
+	userId := int64(data["id"].(float64))
+
+	user, err := auth.repo.GetCredByID(ctx, userId)
+	if err != nil {
+		log.Printf("[FindUserByAccessToken] error: %v\n", err)
+		return nil, errors.ErrUserCredential
+	}
+
+	return user, nil
+}
+
+func (auth AuthServiceImpl) newAccessToken(user *entity.UserCred) (string, error) {
+	config := config.GetConfig()
+
+	claims := auth.newUserClaim(user.UserID, user.Email, config.JWT_AT_EXPIRATION)
+	accessToken := jwt.NewWithClaims(config.JWT_SIGNING_METHOD, claims)
+	signed, err := accessToken.SignedString(config.JWT_SIGNATURE_KEY)
+	if err != nil {
+		log.Printf("[NewAccessToken] error: %v\n", err)
+		return "", err
+	}
+
+	return signed, nil
+}
+
+func (auth AuthServiceImpl) newUserClaim(id int64, username string, exp time.Duration) *jwt.MapClaims {
+	return &jwt.MapClaims{
+		"iss": config.GetConfig().JWT_ISSUER,
+		"exp": time.Now().Add(exp).Unix(),
+		"data": map[string]interface{}{
+			"id":       id,
+			"username": username,
+		},
+	}
 }
