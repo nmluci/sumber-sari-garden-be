@@ -7,5 +7,5 @@ INSERT INTO user_role(id, name) VALUES
     (1, "admin"),
     (2, "customer");
 
-INSERT INTO product_categories(id, name) VALUES
+INSERT INTO product_category(id, name) VALUES
     (1, "No Category");
