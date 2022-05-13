@@ -6,3 +6,6 @@ INSERT INTO order_status(id, name) VALUES
 INSERT INTO user_role(id, name) VALUES
     (1, "admin"),
     (2, "customer");
+
+INSERT INTO product_category(id, name) VALUES
+    (1, "No Category");

@@ -7,6 +7,7 @@ import (
 
 	"github.com/nmluci/sumber-sari-garden/internal/entity"
 	"github.com/nmluci/sumber-sari-garden/pkg/database"
+	"github.com/nmluci/sumber-sari-garden/pkg/errors"
 )
 
 type AuthRepository interface {
@@ -66,9 +67,12 @@ func (auth authRepositoryImpl) StoreUserCred(ctx context.Context, data entity.Us
 func (auth authRepositoryImpl) GetCredByEmail(ctx context.Context, email string) (usr *entity.UserCred, err error) {
 	res := auth.db.QueryRowContext(ctx, FIND_CRED_BY_EMAIL, email)
 	usr, err = mapCredToEntity(res)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		log.Printf("[GetCredByEmail] err: %v\n", err)
 		return
+	} else if err == sql.ErrNoRows {
+		log.Printf("[GetCredByEmail] no data existed in user table\n")
+		return nil, errors.ErrInvalidResources
 	}
 
 	return

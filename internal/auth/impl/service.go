@@ -21,7 +21,7 @@ func (auth AuthServiceImpl) RegisterNewUser(ctx context.Context, res *dto.UserRe
 	userInfo, userCred := res.ToEntity()
 
 	existed, err := auth.repo.GetCredByEmail(ctx, userCred.Email)
-	if err != nil {
+	if err != nil && err != errors.ErrInvalidResources {
 		log.Printf("[RegisterNewUser] failed to check email duplication, err => %+v\n", err)
 		return
 	}
