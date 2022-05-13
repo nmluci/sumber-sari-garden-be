@@ -40,33 +40,15 @@ func NewProductHandler(r *mux.Router, ps ProductService) *ProductHandler {
 
 func (prd *ProductHandler) GetAllProduct() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		params := r.URL.Query()
-
-		limit := params.Get("limit")
-		if limit == "" {
-			limit = "10"
-		}
-
-		limitParsed, err := strconv.ParseUint(limit, 10, 64)
+		data := &dto.ProductSearchParams{}
+		err := json.NewDecoder(r.Body).Decode(data)
 		if err != nil {
-			log.Printf("[GetAllProduct] failed to parsed limit data, err => %+v\n", err)
+			log.Printf("[GetAllProduct] failed to parse JSON data, err => %+v", err)
 			responseutil.WriteErrorResponse(w, err)
 			return
 		}
 
-		offset := params.Get("offset")
-		if offset == "" {
-			offset = "0"
-		}
-
-		offsetParsed, err := strconv.ParseUint(offset, 10, 64)
-		if err != nil {
-			log.Printf("[GetAllProduct] failed to parsed offset data, err => %+v\n", err)
-			responseutil.WriteErrorResponse(w, err)
-			return
-		}
-
-		res, err := prd.ps.GetAllProduct(r.Context(), limitParsed, offsetParsed)
+		res, err := prd.ps.GetAllProduct(r.Context(), data)
 		if err != nil {
 			responseutil.WriteErrorResponse(w, err)
 			return

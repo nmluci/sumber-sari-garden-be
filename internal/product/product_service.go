@@ -9,7 +9,7 @@ import (
 )
 
 type ProductService interface {
-	GetAllProduct(ctx context.Context, limit uint64, offset uint64) (res dto.ProductsResponse, err error)
+	GetAllProduct(ctx context.Context, params *dto.ProductSearchParams) (res dto.ProductsResponse, err error)
 	GetProductByID(ctx context.Context, id uint64) (res *dto.ProductResponse, err error)
 	StoreNewProduct(ctx context.Context, data *dto.NewProductRequest) (err error)
 	UpdateProduct(ctx context.Context, data *dto.UpdateProductRequest) (err error)
