@@ -11,6 +11,7 @@ type UserRegistrationRequest struct {
 	Address   string `json:"address"`
 	Email     string `json:"email"`
 	Password  string `json:"password"`
+	RoleID    int64  `json:"role_id"`
 }
 
 type UserSignIn struct {
@@ -26,9 +27,14 @@ func (dto *UserRegistrationRequest) ToEntity() (usr *entity.UserInfo, cred *enti
 		Address:   dto.Address,
 	}
 
+	if dto.RoleID == 0 || dto.RoleID >= 2 {
+		dto.RoleID = 2
+	}
+
 	cred = &entity.UserCred{
 		Email:    dto.Email,
 		Password: dto.Password,
+		UserRole: dto.RoleID,
 	}
 
 	return
