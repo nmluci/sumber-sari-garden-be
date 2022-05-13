@@ -76,7 +76,13 @@ func (auth AuthServiceImpl) LoginUser(ctx context.Context, res *dto.UserSignIn) 
 		return
 	}
 
-	return dto.NewUserSignInResponse(userCred, userInfo)
+	token, err := auth.newAccessToken(userCred)
+	if err != nil {
+		log.Printf("[LoginUser] failed to generate access token, err => %+v\n", err)
+		return
+	}
+
+	return dto.NewUserSignInResponse(userCred, userInfo, token)
 }
 
 func (auth AuthServiceImpl) FindUserByAccessToken(ctx context.Context, accessToken string) (*entity.UserCred, error) {
