@@ -6,6 +6,7 @@ import (
 	"github.com/nmluci/sumber-sari-garden/internal/global/middleware"
 	"github.com/nmluci/sumber-sari-garden/internal/ping"
 	"github.com/nmluci/sumber-sari-garden/internal/product"
+	"github.com/nmluci/sumber-sari-garden/internal/usercart"
 	"github.com/nmluci/sumber-sari-garden/pkg/database"
 )
 
@@ -22,9 +23,13 @@ func Init(globalRouter *mux.Router, db *database.DatabaseClient) {
 	authController := auth.NewAuthHandler(router, authService)
 	authController.InitHandler()
 
+	protectedRoute.Use(middleware.AuthMiddleware(authService))
+
 	productService := product.NewProductService(db)
-	productController := product.NewProductHandler(router, productService)
+	productController := product.NewProductHandler(router, protectedRoute, productService)
 	productController.InitHandler()
 
-	protectedRoute.Use(middleware.AuthMiddleware(authService))
+	cartService := usercart.NewUsercartService(db)
+	cartController := usercart.NewUsercartHandler(protectedRoute, cartService)
+	cartController.InitHandler()
 }
