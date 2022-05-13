@@ -77,6 +77,16 @@ func (prd *ProductServiceImpl) StoreNewProduct(ctx context.Context, data *dto.Ne
 
 func (prd *ProductServiceImpl) UpdateProduct(ctx context.Context, data *dto.UpdateProductRequest) (err error) {
 	res := data.ToEntity()
+	cat, err := prd.repo.GetCategoryByID(ctx, res.CategoryID)
+	if err != nil {
+		if cat == nil {
+			log.Printf("[UpdateProduct] category isn't valid, cat_id => %d\n", res.CategoryID)
+			err = errors.ErrInvalidRequestBody
+		} else {
+			log.Printf("[UpdateProduct] an error occured while validating product category, cat_id => %d, err => %+v\n", res.CategoryID, err)
+		}
+		return
+	}
 
 	err = prd.repo.UpdateProduct(ctx, res)
 	if err != nil {
@@ -88,6 +98,17 @@ func (prd *ProductServiceImpl) UpdateProduct(ctx context.Context, data *dto.Upda
 }
 
 func (prd *ProductServiceImpl) DeleteProduct(ctx context.Context, id uint64) (err error) {
+	exist, err := prd.repo.GetProductByID(ctx, id)
+	if err != nil {
+		if exist == nil {
+			log.Printf("[DeleteProduct] product isn't exist, id => %d\n", id)
+			err = errors.ErrInvalidRequestBody
+		} else {
+			log.Printf("[DeleteProduct] an error occured while validating product, id => %v, err => %+v\n", id, err)
+		}
+		return
+	}
+
 	err = prd.repo.DeleteProduct(ctx, id)
 	if err != nil {
 		log.Printf("[DeleteProduct] an error occured while deleting product, id => %v, err => %+v\n", id, err)
@@ -109,6 +130,8 @@ func (prd *ProductServiceImpl) GetAllCategory(ctx context.Context) (res dto.Cate
 
 func (prd *ProductServiceImpl) StoreNewCategory(ctx context.Context, data *dto.NewCategoryRequest) (err error) {
 	res := data.ToEntity()
+
+	// TODO: log new category by ID
 	_, err = prd.repo.StoreCategory(ctx, res)
 	if err != nil {
 		log.Printf("[StoreNewCategory] an error occured while storing new category, err => %+V\n", err)
@@ -121,16 +144,27 @@ func (prd *ProductServiceImpl) UpdateCategory(ctx context.Context, data *dto.Upd
 	res := data.ToEntity()
 	err = prd.repo.UpdateCategory(ctx, res)
 	if err != nil {
-		log.Printf("[UpdateCategory] an error occured while storing new category, err => %+V\n", err)
+		log.Printf("[UpdateCategory] an error occured while updating category, err => %+V\n", err)
 	}
 
 	return
 }
 
 func (prd *ProductServiceImpl) DeleteCategory(ctx context.Context, id uint64) (err error) {
+	cat, err := prd.repo.GetCategoryByID(ctx, id)
+	if err != nil {
+		if cat == nil {
+			log.Printf("[DeleteCategory] category isn't valid, cat_id => %d\n", id)
+			err = errors.ErrInvalidRequestBody
+		} else {
+			log.Printf("[DeleteCategory] an error occured while deleting category, cat_id => %d, err => %+v\n", id, err)
+		}
+		return
+	}
+
 	err = prd.repo.DeleteCategory(ctx, id)
 	if err != nil {
-		log.Printf("[UpdateCategory] an error occured while storing new category, err => %+V\n", err)
+		log.Printf("[DeleteCategory] an error occured while deleting category, err => %+V\n", err)
 	}
 
 	return

@@ -34,6 +34,10 @@ func (ps *ProductHandler) InitHandler() {
 	routes.HandleFunc("/category/{id}", ps.DeleteCategory()).Methods(http.MethodDelete, http.MethodOptions)
 }
 
+func NewProductHandler(r *mux.Router, ps ProductService) *ProductHandler {
+	return &ProductHandler{r: r, ps: ps}
+}
+
 func (prd *ProductHandler) GetAllProduct() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := r.URL.Query()
@@ -43,21 +47,21 @@ func (prd *ProductHandler) GetAllProduct() http.HandlerFunc {
 			limit = "10"
 		}
 
-		limitParsed, err := strconv.ParseInt(limit, 10, 64)
+		limitParsed, err := strconv.ParseUint(limit, 10, 64)
 		if err != nil {
 			log.Printf("[GetAllProduct] failed to parsed limit data, err => %+v\n", err)
 			responseutil.WriteErrorResponse(w, err)
 			return
 		}
 
-		offset := params.Get("limit")
-		if limit == "" {
-			limit = "0"
+		offset := params.Get("offset")
+		if offset == "" {
+			offset = "0"
 		}
 
-		offsetParsed, err := strconv.ParseInt(offset, 10, 64)
+		offsetParsed, err := strconv.ParseUint(offset, 10, 64)
 		if err != nil {
-			log.Printf("[GetAllProduct] failed to parsed limit data, err => %+v\n", err)
+			log.Printf("[GetAllProduct] failed to parsed offset data, err => %+v\n", err)
 			responseutil.WriteErrorResponse(w, err)
 			return
 		}

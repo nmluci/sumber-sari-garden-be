@@ -14,13 +14,13 @@ type ProductRepository interface {
 	CountProduct(ctx context.Context) (sum uint64, err error)
 	GetAllProduct(ctx context.Context, limit uint64, offset uint64) (res entity.ProductDetails, err error)
 	GetProductByID(ctx context.Context, id uint64) (res *entity.Product, err error)
-	StoreProduct(ctx context.Context, res *entity.Product) (id uint64, err error)
+	StoreProduct(ctx context.Context, res *entity.Product) (id int64, err error)
 	UpdateProduct(ctx context.Context, res *entity.Product) (err error)
 	DeleteProduct(ctx context.Context, id uint64) (err error)
 
 	GetAllCategory(ctx context.Context) (res entity.ProductCategories, err error)
 	GetCategoryByID(ctx context.Context, id uint64) (res *entity.ProductCategory, err error)
-	StoreCategory(ctx context.Context, res *entity.ProductCategory) (id uint64, err error)
+	StoreCategory(ctx context.Context, res *entity.ProductCategory) (id int64, err error)
 	UpdateCategory(ctx context.Context, res *entity.ProductCategory) (err error)
 	DeleteCategory(ctx context.Context, id uint64) (err error)
 }
@@ -38,8 +38,8 @@ const (
 	UPDATE_PRODUCT    = `UPDATE product SET category_id = ?, name=?, price=?, qty=?, url=?, description=? WHERE id=?`
 	DELETE_PRODUCT    = `DELETE FROM product WHERE id=?`
 
-	GET_ALL_CATEGORY   = `SELECT c.id, c.name FROM product_category`
-	GET_CATEGORY_BY_ID = `SELECT c.id, c.name FROM product_category WHERE c.id=?`
+	GET_ALL_CATEGORY   = `SELECT c.id, c.name FROM product_category c`
+	GET_CATEGORY_BY_ID = `SELECT c.id, c.name FROM product_category c WHERE c.id=?`
 	STORE_NEW_CATEGORY = `INSERT INTO product_category(name) VALUES (?)`
 	UPDATE_CATEGORY    = `UPDATE product_category SET name=? WHERE id=?`
 	DELETE_CATEGORY    = `DELETE FROM product_category WHERE id=?`
@@ -94,9 +94,8 @@ func (repo productRepositoryImpl) GetProductByID(ctx context.Context, id uint64)
 		log.Printf("[GetProductByID] failed to fetch product, err => %+v\n", err)
 		return
 	} else if err == sql.ErrNoRows {
-		log.Printf("[GetProductByID] product not found, id = %d\n", id)
-		err = errors.ErrInvalidResources
-		return
+		log.Printf("[GetProductByID] product not found, id => %d\n", id)
+		return nil, errors.ErrInvalidResources
 	}
 
 	return
@@ -115,7 +114,7 @@ func (repo productRepositoryImpl) StoreProduct(ctx context.Context, res *entity.
 		return
 	}
 
-	queryRes, err := query.ExecContext(ctx, res.CategoryID, res.Name, res.Price, res.PictureURL, res.Description)
+	queryRes, err := query.ExecContext(ctx, res.CategoryID, res.Name, res.Price, res.Qty, res.PictureURL, res.Description)
 	if err != nil {
 		log.Printf("[StoreProduct] failed to insert new product, err => %+v\n", err)
 		return
@@ -144,7 +143,7 @@ func (repo productRepositoryImpl) UpdateProduct(ctx context.Context, res *entity
 		return
 	}
 
-	_, err = query.ExecContext(ctx, res.CategoryID, res.Name, res.Price, res.PictureURL, res.Description, res.ID)
+	_, err = query.ExecContext(ctx, res.CategoryID, res.Name, res.Price, res.Qty, res.PictureURL, res.Description, res.ID)
 	if err != nil {
 		log.Printf("[UpdateProduct] failed to update data, id => %d, err => %+v\n", res.ID, err)
 		return
@@ -216,9 +215,8 @@ func (repo productRepositoryImpl) GetCategoryByID(ctx context.Context, id uint64
 		log.Printf("[GetCategoryByID] failed to fetch product, err => %+v\n", err)
 		return
 	} else if err == sql.ErrNoRows {
-		log.Printf("[GetCategoryByID] product not found, id = %d\n", id)
-		err = errors.ErrInvalidResources
-		return
+		log.Printf("[GetCategoryByID] category not found, id => %d\n", id)
+		return nil, errors.ErrInvalidResources
 	}
 
 	return
@@ -289,7 +287,7 @@ func (repo productRepositoryImpl) DeleteCategory(ctx context.Context, id uint64)
 
 	query, err := tx.PrepareContext(ctx, DELETE_CATEGORY)
 	if err != nil {
-		log.Printf("[DeleteCategory] failed to prepare query, err = %+v\n", err)
+		log.Printf("[DeleteCategory] failed to prepare query, err => %+v\n", err)
 		return
 	}
 
@@ -342,7 +340,7 @@ func mapProductDetails(r *sql.Rows) (res entity.ProductDetails, err error) {
 
 	for r.Next() {
 		temp := &entity.ProductDetail{}
-		err = r.Scan(&temp.ID, &temp.CategoryID, &temp.Name, &temp.CategoryName, &temp.Price, &temp.PictureURL, &temp.Description)
+		err = r.Scan(&temp.ID, &temp.CategoryID, &temp.Name, &temp.CategoryName, &temp.Price, &temp.Qty, &temp.PictureURL, &temp.Description)
 		if err != nil {
 			log.Printf("[mapProductDetails] error while parsing query result, err => %+v\n", err)
 			return nil, err
