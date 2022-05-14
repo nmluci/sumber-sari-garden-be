@@ -2,6 +2,7 @@ package product
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -44,7 +45,7 @@ func (prd *ProductHandler) GetAllProduct() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := &dto.ProductSearchParams{}
 		err := json.NewDecoder(r.Body).Decode(data)
-		if err != nil {
+		if err != nil && err != io.EOF {
 			log.Printf("[GetAllProduct] failed to parse JSON data, err => %+v", err)
 			responseutil.WriteErrorResponse(w, err)
 			return

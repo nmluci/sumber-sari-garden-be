@@ -52,6 +52,10 @@ func (dto *ProductSearchParams) ToEntity(cats entity.ProductCategories) (params 
 		for _, cat := range cats {
 			params.Categories = append(params.Categories, strconv.FormatInt(int64(cat.ID), 10))
 		}
+	} else {
+		for _, cat := range dto.Categories {
+			params.Categories = append(params.Categories, strconv.FormatUint(cat, 10))
+		}
 	}
 
 	if dto.Order == 2 {

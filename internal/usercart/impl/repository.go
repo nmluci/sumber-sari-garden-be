@@ -27,13 +27,14 @@ type usercartRepositoryImpl struct {
 
 const (
 	GET_ORDER_DETAIL_BY_ID = `SELECT od.id, od.order_id, od.product_id, p.name, p.price, od.qty, 
-			(c.amount*(p.price*od.qty)) disc, ((p.price*od.qty)-(c.amount*(p.price*od.qty))) subtotal FROM order_detail od
-			LEFT JOIN products p ON od.product_id=p.id LEFT JOIN order_data o ON od.order_id=o.id
+			(case when o.coupon_id is not null then (c.amount*(p.price*od.qty)) else 0 end) disc, 
+			((p.price*od.qty)-(case when o.coupon_id is not null then (c.amount*(p.price*od.qty)) else 0 end)) subtotal FROM order_detail od
+			LEFT JOIN product p ON od.product_id=p.id LEFT JOIN order_data o ON od.order_id=o.id
 			LEFT JOIN coupon c ON o.coupon_id=c.id WHERE o.id=?`
-	GET_ORDER_METADATA = `SELECT o.id, SUM((p.price*od.qty)-(c.amount*(p.price*od.qty))) grand_total, COUNT(od.*) item_count FROM order_detail od
-			LEFT JOIN products p ON od.product_id=p.id LEFT JOIN order_data o ON od.order_id=o.id
+	GET_ORDER_METADATA = `SELECT o.id, SUM((p.price*od.qty)-(case when o.coupon_id is not null then (c.amount*(p.price*od.qty)) else 0 end)) grand_total, 
+			COUNT(*) item_count FROM order_detail od LEFT JOIN product p ON od.product_id=p.id LEFT JOIN order_data o ON od.order_id=o.id
 			LEFT JOIN coupon c ON o.coupon_id=c.id GROUP BY o.id HAVING o.id=?`
-	GET_ORDER   = `SELECT o.id, o.user_id, o.status_id, s.name, o.coupon_id FROM order_data LEFT JOIN order_status s ON o.status_id=s.id WHERE o.user_id=?`
+	GET_ORDER   = `SELECT o.id, o.user_id, o.status_id, s.name, o.coupon_id FROM order_data o LEFT JOIN order_status s ON o.status_id=s.id WHERE o.user_id=?`
 	NEW_ORDER   = `INSERT INTO order_data(user_id) VALUES (?)`
 	GET_ITEM    = GET_ORDER_DETAIL_BY_ID + " AND p.id = ?"
 	INSERT_ITEM = `INSERT INTO order_detail(order_id, product_id, qty) VALUES (?, ?, ?)`
@@ -135,7 +136,7 @@ func (repo *usercartRepositoryImpl) GetCartMetadataByOrderID(ctx context.Context
 }
 
 func (repo *usercartRepositoryImpl) GetItem(ctx context.Context, orderID uint64, productID uint64) (res *entity.OrderDetail, err error) {
-	query, err := repo.db.PrepareContext(ctx, GET_ORDER_DETAIL_BY_ID)
+	query, err := repo.db.PrepareContext(ctx, GET_ITEM)
 	if err != nil {
 		log.Printf("[GetItem] failed to prepare query, err => %+v\n", err)
 		return
@@ -248,7 +249,7 @@ func mapOrderDetails(r *sql.Rows) (res entity.OrderDetails, err error) {
 
 	for r.Next() {
 		temp := &entity.OrderDetail{}
-		err = r.Scan(&temp.ID, &temp.OrderID, &temp.ProductID, &temp.ProductName, &temp.Price, &temp.Disc, &temp.SubTotal)
+		err = r.Scan(&temp.ID, &temp.OrderID, &temp.ProductID, &temp.ProductName, &temp.Price, &temp.Qty, &temp.Disc, &temp.SubTotal)
 		if err != nil {
 			log.Printf("[mapOrderDetails] an error occured while parsing query result, err => %+v\n", err)
 			return nil, err
@@ -261,12 +262,12 @@ func mapOrderDetails(r *sql.Rows) (res entity.OrderDetails, err error) {
 
 func mapOrderMetadata(r *sql.Row) (res *entity.OrderMetadata, err error) {
 	res = &entity.OrderMetadata{}
-	err = r.Scan(&res.OrderID, &res.ItemCount, &res.GrandTotal)
+	err = r.Scan(&res.OrderID, &res.GrandTotal, &res.ItemCount)
 	return
 }
 
 func mapOrderDetail(r *sql.Row) (res *entity.OrderDetail, err error) {
 	res = &entity.OrderDetail{}
-	err = r.Scan(&res.ID, &res.OrderID, &res.ProductID, &res.ProductName, &res.Price, &res.Disc, &res.SubTotal)
+	err = r.Scan(&res.ID, &res.OrderID, &res.ProductID, &res.ProductName, &res.Price, &res.Qty, &res.Disc, &res.SubTotal)
 	return
 }

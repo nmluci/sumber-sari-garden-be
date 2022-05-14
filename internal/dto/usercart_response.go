@@ -8,12 +8,12 @@ import (
 )
 
 type CartItemResponse struct {
-	ProductID   uint64 `json:"product_id"`
-	ProductName string `json:"product_name"`
-	Price       uint64 `json:"price"`
-	Qty         uint64 `json:"qty"`
-	Disc        uint64 `json:"disc"`
-	Subtotal    uint64 `json:"sub_total"`
+	ProductID   uint64  `json:"product_id"`
+	ProductName string  `json:"product_name"`
+	Price       uint64  `json:"price"`
+	Qty         uint64  `json:"qty"`
+	Disc        float32 `json:"disc"`
+	Subtotal    float32 `json:"sub_total"`
 }
 
 type UsercartResponse struct {
@@ -21,7 +21,7 @@ type UsercartResponse struct {
 	UserID     uint64              `json:"user_id"`
 	Status     string              `json:"order_status"`
 	ItemCount  uint64              `json:"item_count"`
-	GrandTotal uint64              `json:"grand_total"`
+	GrandTotal float32             `json:"grand_total"`
 	Items      []*CartItemResponse `json:"items"`
 }
 

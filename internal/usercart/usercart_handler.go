@@ -23,7 +23,7 @@ func (handler *UsercartHandler) InitHandler() {
 
 	routes.HandleFunc("", handler.GetCart()).Methods(http.MethodGet, http.MethodOptions)
 	routes.HandleFunc("", handler.UpsertItem()).Methods(http.MethodPost, http.MethodOptions)
-	routes.HandleFunc("/:id", handler.RemoveItem()).Methods(http.MethodDelete, http.MethodOptions)
+	routes.HandleFunc("/{id}", handler.RemoveItem()).Methods(http.MethodDelete, http.MethodOptions)
 }
 
 func NewUsercartHandler(r *mux.Router, us UsercartService) *UsercartHandler {

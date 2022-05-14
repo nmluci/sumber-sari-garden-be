@@ -22,16 +22,18 @@ func (us *UsercartServiceImpl) UpsertItem(ctx context.Context, res *dto.UpsertIt
 	usr := authutil.GetUserIDFromCtx(ctx)
 	data := res.ToEntity()
 
-	_, err = us.repo.GetCartByUserID(ctx, usr)
+	carts, err := us.repo.GetCartByUserID(ctx, usr)
 	if err != nil && err != errors.ErrInvalidResources {
 		log.Printf("[UpsertItem] an error occured while validating user's cart, err => %+v\n", err)
 		return
-	} else if err == errors.ErrInvalidResources {
+	} else if err == errors.ErrInvalidResources || carts.StatusID != 1 {
 		cartID, err = us.repo.NewCart(ctx, usr)
 		if err != nil {
 			log.Printf("[UpsertItem] an error occured while creating new order, err => %+v\n", err)
 			return
 		}
+	} else {
+		cartID = int64(carts.ID)
 	}
 
 	item, err := us.repo.GetItem(ctx, uint64(cartID), data.ProductID)
@@ -62,9 +64,8 @@ func (us *UsercartServiceImpl) RemoveItem(ctx context.Context, pid uint64) (err 
 	if err != nil && err != errors.ErrInvalidResources {
 		log.Printf("[RemoveItem] an error occured while validating user's cart, err => %+v\n", err)
 		return
-	} else if err == errors.ErrInvalidResources {
+	} else if err == errors.ErrInvalidResources || cart.StatusID != 1 {
 		log.Printf("[RemoveItem] user doesn't have any order right now\n")
-		err = errors.ErrInvalidRequestBody
 		return
 	}
 
@@ -74,7 +75,6 @@ func (us *UsercartServiceImpl) RemoveItem(ctx context.Context, pid uint64) (err 
 		return
 	} else if err == errors.ErrInvalidResources {
 		log.Printf("[RemoveItem] user doesn't have requested product right now, item_id => %d\n", pid)
-		err = errors.ErrInvalidRequestBody
 		return
 	}
 
@@ -96,7 +96,6 @@ func (us *UsercartServiceImpl) GetCart(ctx context.Context) (cart dto.UsercartRe
 		return
 	} else if err == errors.ErrInvalidResources {
 		log.Printf("[GetCart] user doesn't have any order right now\n")
-		err = errors.ErrInvalidRequestBody
 		return
 	}
 
@@ -106,7 +105,6 @@ func (us *UsercartServiceImpl) GetCart(ctx context.Context) (cart dto.UsercartRe
 		return
 	} else if err == errors.ErrInvalidResources {
 		log.Printf("[GetCart] user doesn't have any order right now\n")
-		err = errors.ErrInvalidRequestBody
 		return
 	}
 
