@@ -3,9 +3,10 @@ package impl
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
-	"strings"
 
+	"github.com/nmluci/sumber-sari-garden/internal/dto"
 	"github.com/nmluci/sumber-sari-garden/internal/entity"
 	"github.com/nmluci/sumber-sari-garden/pkg/database"
 	"github.com/nmluci/sumber-sari-garden/pkg/errors"
@@ -20,6 +21,9 @@ type UsercartRepository interface {
 	InsertItem(ctx context.Context, orderID uint64, productID uint64, qty uint64) (err error)
 	UpdateItem(ctx context.Context, orderID uint64, productID uint64, qty uint64) (err error)
 	RemoveItem(ctx context.Context, orderID uint64, productID uint64) (err error)
+	GetHistoryMetadata(ctx context.Context, params dto.HistoryParams) (meta []*entity.OrderHistoryMetadata, err error)
+	GetCouponByCode(ctx context.Context, code string) (res *entity.ActiveCoupon, err error)
+	Checkout(ctx context.Context, userID int64, orderID uint64, couponID *uint64) (err error)
 }
 
 type usercartRepositoryImpl struct {
@@ -37,23 +41,25 @@ var (
 			LEFT JOIN coupon c ON o.coupon_id=c.id GROUP BY o.id HAVING o.id=?`
 
 	HISTORY_METADATA_A = `SELECT o.id, o.created_at, SUM((p.price*od.qty)-(case when o.coupon_id is not null then (c.amount*(p.price*od.qty)) else 0 end)) grand_total, 
-			COUNT(*) item_count, c.name, s.name FROM order_detail od 
+			COUNT(*) item_count, c.code, s.name FROM order_detail od 
 			LEFT JOIN product p ON od.product_id=p.id LEFT JOIN order_data o ON od.order_id=o.id LEFT JOIN order_status s ON s.id=o.status_id
-			LEFT JOIN coupon c ON o.coupon_id=c.id WHERE o.status_id = 1 GROUP BY o.id HAVING o.user_id=?`
+			LEFT JOIN coupon c ON o.coupon_id=c.id WHERE o.status_id = 1 GROUP BY o.id, o.user_id HAVING o.user_id=?`
 
 	HISTORY_METADATA_B = `SELECT o.id, o.created_at, SUM((p.price*od.qty)-(case when o.coupon_id is not null then (c.amount*(p.price*od.qty)) else 0 end)) grand_total, 
-			COUNT(*) item_count, c.name, s.name FROM order_detail od 
+			COUNT(*) item_count, c.code, s.name FROM order_detail od 
 			LEFT JOIN product p ON od.product_id=p.id LEFT JOIN order_data o ON od.order_id=o.id LEFT JOIN order_status s ON s.id=o.status_id
-			LEFT JOIN coupon c ON o.coupon_id=c.id WHERE o.status_id = 2 GROUP BY o.id HAVING o.user_id=?`
+			LEFT JOIN coupon c ON o.coupon_id=c.id WHERE o.status_id = 2 GROUP BY o.id, o.user_id HAVING o.user_id=?`
 
 	HISTORY_METADATA_C = `SELECT o.id, o.created_at, SUM((p.price*od.qty)-(case when o.coupon_id is not null then (c.amount*(p.price*od.qty)) else 0 end)) grand_total, 
-			COUNT(*) item_count, c.name, s.name FROM order_detail od 
+			COUNT(*) item_count, c.code, s.name FROM order_detail od 
 			LEFT JOIN product p ON od.product_id=p.id LEFT JOIN order_data o ON od.order_id=o.id LEFT JOIN order_status s ON s.id=o.status_id
-			LEFT JOIN coupon c ON o.coupon_id=c.id WHERE o.status_id = 3 GROUP BY o.id HAVING o.user_id=?`
+			LEFT JOIN coupon c ON o.coupon_id=c.id WHERE o.status_id = 3 GROUP BY o.id, o.user_id HAVING o.user_id=?`
 
-	GET_H_METADATA = strings.Join([]string{HISTORY_METADATA_A, HISTORY_METADATA_B, HISTORY_METADATA_C}, " UNION ") + " WHERE o.created_at BETWEEN ? AND ? LIMIT ? OFFSET ?"
+	GET_H_METADATA = fmt.Sprintf("SELECT * FROM (%s UNION %s UNION %s) t WHERE (t.created_at BETWEEN ? AND ?) LIMIT ? OFFSET ?", HISTORY_METADATA_A, HISTORY_METADATA_B, HISTORY_METADATA_C)
+	// GET_H_METADATA = strings.Join([]string{HISTORY_METADATA_A, HISTORY_METADATA_B, HISTORY_METADATA_C}, " UNION ") + " WHERE (o.created_at BETWEEN ? AND ?) LIMIT ? OFFSET ?"
 
-	GET_ORDER = `SELECT o.id, o.user_id, o.status_id, s.name, o.coupon_id FROM order_data o LEFT JOIN order_status s ON o.status_id=s.id WHERE o.user_id=?`
+	GET_ORDER = `SELECT o.id, o.user_id, o.status_id, s.name, o.coupon_id FROM order_data o 
+			LEFT JOIN order_status s ON o.status_id=s.id WHERE o.user_id=? AND o.status_id=1 ORDER BY o.created_at DESC LIMIT 1`
 	NEW_ORDER = `INSERT INTO order_data(user_id) VALUES (?)`
 
 	GET_ITEM    = GET_ORDER_DETAIL_BY_ID + " AND p.id = ?"
@@ -268,14 +274,16 @@ func (repo *usercartRepositoryImpl) RemoveItem(ctx context.Context, orderID uint
 	return
 }
 
-func (repo *usercartRepositoryImpl) GetHistoryMetadata(ctx context.Context, params entity.HistoryParams) (meta []*entity.OrderHistoryMetadata, err error) {
+func (repo *usercartRepositoryImpl) GetHistoryMetadata(ctx context.Context, params dto.HistoryParams) (meta []*entity.OrderHistoryMetadata, err error) {
+	log.Println(params)
+
 	query, err := repo.db.PrepareContext(ctx, GET_H_METADATA)
 	if err != nil {
 		log.Printf("[GetHistoryMetadata] failed to prepare query, err => %+v\n", err)
 		return
 	}
 
-	rows, err := query.QueryContext(ctx, params.UserID, params.UserID, params.UserID, params.DateStart, params.DateEnd, params.Limit, params.Offset)
+	rows, err := query.QueryContext(ctx, params.UserID, params.UserID, params.UserID, params.DateStart, params.DateEnd, params.Limit, params.Offset*params.Limit)
 	if err != nil {
 		log.Printf("[GetHistoryMetadata] failed to fetch order metadatas, err => %+v\n", err)
 		return
@@ -311,7 +319,7 @@ func (repo *usercartRepositoryImpl) GetCouponByCode(ctx context.Context, code st
 	return
 }
 
-func (repo *usercartRepositoryImpl) Checkout(ctx context.Context, userID uint64, orderID uint64, couponID uint64) (err error) {
+func (repo *usercartRepositoryImpl) Checkout(ctx context.Context, userID int64, orderID uint64, couponID *uint64) (err error) {
 	tx, err := repo.db.BeginTx(ctx, nil)
 	if err != nil {
 		log.Printf("[Checkout] failed to start new transaction, err => %v\n", err)
@@ -326,6 +334,7 @@ func (repo *usercartRepositoryImpl) Checkout(ctx context.Context, userID uint64,
 		return
 	}
 
+	log.Println(couponID, userID, orderID)
 	_, err = query.ExecContext(ctx, couponID, userID, orderID)
 	if err != nil {
 		log.Printf("[Checkout] failed to checkout an order, orderID => %d, err => %+v\n", orderID, err)
@@ -392,6 +401,6 @@ func mapHistory(r *sql.Rows) (res []*entity.OrderHistoryMetadata, err error) {
 
 func mapCoupon(r *sql.Row) (res *entity.ActiveCoupon, err error) {
 	res = &entity.ActiveCoupon{}
-	err = r.Scan(&res.Code, &res.Amount, &res.ExpiredAt)
+	err = r.Scan(&res.ID, &res.Code, &res.Amount, &res.ExpiredAt)
 	return
 }

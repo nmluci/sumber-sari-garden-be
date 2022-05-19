@@ -13,7 +13,7 @@ type UsercartService interface {
 	RemoveItem(ctx context.Context, pid uint64) (err error)
 	GetCart(ctx context.Context) (cart dto.UsercartResponse, err error)
 	Checkout(ctx context.Context, res *dto.OrderCheckoutRequest) (err error)
-	OrderHistory(ctx context.Context) (data dto.OrderHistoryResponse, err error)
+	OrderHistory(ctx context.Context, params dto.HistoryParams) (data *dto.OrderHistoryResponse, err error)
 }
 
 func NewUsercartService(db *database.DatabaseClient) UsercartService {

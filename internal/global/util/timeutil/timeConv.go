@@ -14,3 +14,8 @@ func FormatLocalTime(t time.Time, format string) string {
 	loc, _ := time.LoadLocation("Asia/Makassar")
 	return t.In(loc).Format(format)
 }
+
+func Localize(t time.Time) time.Time {
+	loc, _ := time.LoadLocation("Asia/Makassar")
+	return t.In(loc)
+}

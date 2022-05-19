@@ -32,11 +32,12 @@ type OrderHistoryMetadata struct {
 	OrderDate  time.Time
 	GrandTotal float32
 	ItemCount  uint64
-	CouponName string
+	CouponName *string
 	StatusName string
 }
 
 type ActiveCoupon struct {
+	ID        uint64
 	Code      string
 	Amount    uint64
 	ExpiredAt time.Time
@@ -45,11 +46,3 @@ type ActiveCoupon struct {
 type OrderDetails []*OrderDetail
 
 type ActiveCoupons []*ActiveCoupon
-
-type HistoryParams struct {
-	UserID    uint64
-	Limit     uint64
-	Offset    uint64
-	DateStart time.Time
-	DateEnd   time.Time
-}

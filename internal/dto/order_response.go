@@ -1,8 +1,11 @@
 package dto
 
 import (
+	"log"
+
 	"github.com/nmluci/sumber-sari-garden/internal/entity"
 	"github.com/nmluci/sumber-sari-garden/internal/global/util/timeutil"
+	"github.com/nmluci/sumber-sari-garden/pkg/errors"
 )
 
 type TrxItem struct {
@@ -24,7 +27,7 @@ type TrxMetadata struct {
 }
 
 type OrderHistoryResponse struct {
-	UserID uint64         `json:"uesr_id"`
+	UserID uint64         `json:"user_id"`
 	Trx    []*TrxMetadata `json:"trx"`
 }
 
@@ -34,7 +37,14 @@ type ActiveCoupon struct {
 	ExpiredAt string `json:"expired_at"`
 }
 
-func NewOrderHistoryResponse(userID uint64, meta []*entity.OrderHistoryMetadata, items entity.OrderDetails) (res *OrderHistoryResponse) {
+func NewOrderHistoryResponse(userID uint64, meta []*entity.OrderHistoryMetadata, items entity.OrderDetails) (res *OrderHistoryResponse, err error) {
+	log.Println(meta, items)
+	if len(meta) == 0 || len(items) == 0 {
+		log.Printf("[NewOrderHistoryResponse] failed to encode response data due to incomplete data")
+		err = errors.ErrInvalidResources
+		return
+	}
+
 	res = &OrderHistoryResponse{
 		UserID: userID,
 	}
@@ -46,15 +56,14 @@ func NewOrderHistoryResponse(userID uint64, meta []*entity.OrderHistoryMetadata,
 			Status:     m.StatusName,
 			ItemCount:  m.ItemCount,
 			GrandTotal: m.GrandTotal,
+			Coupon:     m.CouponName,
 		}
-
-		if m.CouponName != "" {
-			*trx.Coupon = m.CouponName
-		}
-
-		res.Trx = append(res.Trx, trx)
 
 		for ti, t := range items {
+			if t.OrderID != m.OrderID {
+				continue
+			}
+
 			data := &TrxItem{
 				ProductID:   t.ProductID,
 				ProductName: t.ProductName,
@@ -72,12 +81,20 @@ func NewOrderHistoryResponse(userID uint64, meta []*entity.OrderHistoryMetadata,
 		if len(meta) >= 3 {
 			meta = append(meta[mi:], meta[:mi+1]...)
 		}
+
+		res.Trx = append(res.Trx, trx)
 	}
 
 	return
 }
 
-func NewActiveCouponResponse(coupons entity.ActiveCoupons) (res []*ActiveCoupon) {
+func NewActiveCouponResponse(coupons entity.ActiveCoupons) (res []*ActiveCoupon, err error) {
+	if len(coupons) == 0 {
+		log.Printf("[NewActiveCouponResponse] failed to encode response data due to incomplete data")
+		err = errors.ErrInvalidResources
+		return
+	}
+
 	res = []*ActiveCoupon{}
 
 	for _, c := range coupons {
