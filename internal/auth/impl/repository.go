@@ -15,6 +15,7 @@ type AuthRepository interface {
 	StoreUserCred(ctx context.Context, data entity.UserCred) (userID int64, err error)
 	GetCredByEmail(ctx context.Context, email string) (usr *entity.UserCred, err error)
 	GetUserInfoByID(ctx context.Context, userID int64) (usr *entity.UserInfo, err error)
+	GetCredByID(ctx context.Context, userID int64) (usr *entity.UserCred, err error)
 }
 
 type authRepositoryImpl struct {
@@ -27,8 +28,9 @@ func NewAuthRepository(db *database.DatabaseClient) *authRepositoryImpl {
 
 var (
 	STORE_USER_INFO    string = `INSERT INTO user_info(user_id, first_name, last_name, phone, address) VALUES (?, ?, ?, ?, ?)`
-	STORE_USER_CRED    string = `INSERT INTO user (email, password) VALUES (?, ?);`
+	STORE_USER_CRED    string = `INSERT INTO user (role_id, email, password) VALUES (?, ?, ?);`
 	FIND_CRED_BY_EMAIL string = `SELECT id, email, password, role_id FROM user WHERE email=?;`
+	FIND_CRED_BY_ID    string = `SELECT id, email, password, role_id FROM user WHERE id=?;`
 	FIND_USER_BY_ID    string = `SELECT first_name, last_name, phone, address FROM user_info WHERE id=?;`
 )
 
@@ -49,7 +51,7 @@ func (auth authRepositoryImpl) StoreUserCred(ctx context.Context, data entity.Us
 		return
 	}
 
-	res, err := stmt.ExecContext(ctx, data.Email, data.Password)
+	res, err := stmt.ExecContext(ctx, data.UserRole, data.Email, data.Password)
 	if err != nil {
 		log.Printf("[StoreUserCred] err: %v\n", err)
 		return
@@ -83,6 +85,17 @@ func (auth authRepositoryImpl) GetUserInfoByID(ctx context.Context, userID int64
 	usr, err = mapUserInfoToEntity(res)
 	if err != nil {
 		log.Printf("[GetUserInfoByID] err: %v\n", err)
+		return
+	}
+
+	return
+}
+
+func (auth authRepositoryImpl) GetCredByID(ctx context.Context, userID int64) (usr *entity.UserCred, err error) {
+	res := auth.db.QueryRowContext(ctx, FIND_CRED_BY_ID, userID)
+	usr, err = mapCredToEntity(res)
+	if err != nil {
+		log.Printf("[GetCredByID] err: %v\n", err)
 		return
 	}
 

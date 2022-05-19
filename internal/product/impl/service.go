@@ -16,20 +16,28 @@ func NewProductService(repo ProductRepository) *ProductServiceImpl {
 	return &ProductServiceImpl{repo: repo}
 }
 
-func (prd *ProductServiceImpl) GetAllProduct(ctx context.Context, limit uint64, offset uint64) (res dto.ProductsResponse, err error) {
+func (prd *ProductServiceImpl) GetAllProduct(ctx context.Context, params *dto.ProductSearchParams) (res dto.ProductsResponse, err error) {
+	cats, err := prd.repo.GetAllCategory(ctx)
+	if err != nil {
+		log.Printf("[GetAllProduct] an error occured while fetching data, err => %+v\n", err)
+		return
+	}
+
+	query := params.ToEntity(cats)
+
 	itemCount, err := prd.repo.CountProduct(ctx)
 	if err != nil {
 		err = errors.ErrInvalidResources
 		return
 	}
 
-	data, err := prd.repo.GetAllProduct(ctx, limit, offset)
+	data, err := prd.repo.GetAllProduct(ctx, query)
 	if err != nil {
 		log.Printf("[GetAllProduct] an error occured while fetching data, err => %+v\n", err)
 		return
 	}
 
-	return dto.NewProductsResponse(data, limit, offset, itemCount)
+	return dto.NewProductsResponse(data, query.Limit, query.Offset, itemCount)
 }
 
 func (prd *ProductServiceImpl) GetProductByID(ctx context.Context, id uint64) (res *dto.ProductResponse, err error) {

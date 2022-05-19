@@ -1,5 +1,13 @@
 package entity
 
+type ProductParameter struct {
+	Keyword    string
+	Order      string
+	Categories []string
+	Limit      uint64
+	Offset     uint64
+}
+
 type Product struct {
 	Name        string
 	PictureURL  string

@@ -3,7 +3,9 @@ package impl
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
+	"strings"
 
 	"github.com/nmluci/sumber-sari-garden/internal/entity"
 	"github.com/nmluci/sumber-sari-garden/pkg/database"
@@ -12,7 +14,7 @@ import (
 
 type ProductRepository interface {
 	CountProduct(ctx context.Context) (sum uint64, err error)
-	GetAllProduct(ctx context.Context, limit uint64, offset uint64) (res entity.ProductDetails, err error)
+	GetAllProduct(ctx context.Context, params *entity.ProductParameter) (res entity.ProductDetails, err error)
 	GetProductByID(ctx context.Context, id uint64) (res *entity.Product, err error)
 	StoreProduct(ctx context.Context, res *entity.Product) (id int64, err error)
 	UpdateProduct(ctx context.Context, res *entity.Product) (err error)
@@ -32,7 +34,8 @@ type productRepositoryImpl struct {
 const (
 	COUNT_PRODUCT   = `SELECT COUNT(*) FROM product`
 	GET_ALL_PRODUCT = `SELECT p.id, p.category_id, p.name, pc.name, p.price, p.qty, p.url, p.description FROM product p
-			 LEFT JOIN product_category pc ON p.category_id=pc.id LIMIT ? OFFSET ?`
+		LEFT JOIN product_category pc ON p.category_id=pc.id WHERE p.name LIKE "%%%s%%" AND pc.id IN (%s) ORDER BY %s LIMIT ? OFFSET ?`
+
 	GET_PRODUCT_BY_ID = `SELECT p.id, p.category_id, p.name, p.price, p.qty, p.url, p.description FROM product p WHERE p.id=?`
 	STORE_NEW_PRODUCT = `INSERT INTO product(category_id, name, price, qty, url, description) VALUES (?, ?, ?, ?, ?, ?)`
 	UPDATE_PRODUCT    = `UPDATE product SET category_id = ?, name=?, price=?, qty=?, url=?, description=? WHERE id=?`
@@ -65,14 +68,14 @@ func (repo productRepositoryImpl) CountProduct(ctx context.Context) (sum uint64,
 	return
 }
 
-func (repo productRepositoryImpl) GetAllProduct(ctx context.Context, limit uint64, offset uint64) (res entity.ProductDetails, err error) {
-	query, err := repo.db.PrepareContext(ctx, GET_ALL_PRODUCT)
+func (repo productRepositoryImpl) GetAllProduct(ctx context.Context, params *entity.ProductParameter) (res entity.ProductDetails, err error) {
+	query, err := repo.db.PrepareContext(ctx, fmt.Sprintf(GET_ALL_PRODUCT, params.Keyword, strings.Join(params.Categories, ", "), params.Order))
 	if err != nil {
 		log.Printf("[GetAllProduct] failed to prepare query, err => %+v\n", err)
 		return
 	}
 
-	rows, err := query.QueryContext(ctx, limit, offset*limit)
+	rows, err := query.QueryContext(ctx, params.Limit, params.Limit*params.Offset)
 	if err != nil {
 		log.Printf("[GetAllProduct] failed to fetch data from db, err => %+v\n", err)
 		return
