@@ -116,3 +116,13 @@ func (us *UsercartServiceImpl) GetCart(ctx context.Context) (cart dto.UsercartRe
 
 	return dto.NewUsercartResponse(meta, orderInfo, items)
 }
+
+func (us *UsercartServiceImpl) Checkout(ctx context.Context, dto *dto.OrderCheckoutRequest) (err error) {
+
+	return
+}
+
+func (us *UsercartServiceImpl) OrderHistory(ctx context.Context) (err error) {
+
+	return
+}

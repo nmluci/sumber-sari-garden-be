@@ -35,6 +35,8 @@ func (ps *ProductHandler) InitHandler() {
 	protected.HandleFunc("/category", ps.StoreNewCategory()).Methods(http.MethodPost, http.MethodOptions)
 	protected.HandleFunc("/category/{id}", ps.UpdateCategory()).Methods(http.MethodPatch, http.MethodOptions)
 	protected.HandleFunc("/category/{id}", ps.DeleteCategory()).Methods(http.MethodDelete, http.MethodOptions)
+
+	// Coupon
 }
 
 func NewProductHandler(r *mux.Router, p *mux.Router, ps ProductService) *ProductHandler {
