@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS order_data (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW() ON UPDATE NOW(),
     CONSTRAINT `fk_order_user` FOREIGN KEY(user_id) REFERENCES user_info(id),
     CONSTRAINT `fk_order_status` FOREIGN KEY(status_id) REFERENCES order_status(id),
-    CONSTRAINT `fk_order_coupon` FOREIGN KEY(coupon_id) REFERENCES coupon(id)
+    CONSTRAINT `fk_order_coupon` FOREIGN KEY(coupon_id) REFERENCES coupon(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS order_detail (
