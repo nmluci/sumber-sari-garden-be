@@ -3,7 +3,7 @@ package dto
 import (
 	"log"
 
-	"github.com/nmluci/sumber-sari-garden/internal/entity"
+	"github.com/nmluci/sumber-sari-garden/internal/models"
 	"github.com/nmluci/sumber-sari-garden/pkg/errors"
 )
 
@@ -15,7 +15,7 @@ type UserSignInResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
-func NewUserSignInResponse(cred *entity.UserCred, info *entity.UserInfo, ac string) (res *UserSignInResponse, err error) {
+func NewUserSignInResponse(cred *models.UserCred, info *models.UserInfo, ac string) (res *UserSignInResponse, err error) {
 	if cred == nil || info == nil {
 		log.Printf("[NewUserSignInResponse] failed to encode response data due to inconsisted data")
 		err = errors.ErrInvalidResources

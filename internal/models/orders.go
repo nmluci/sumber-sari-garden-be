@@ -1,4 +1,6 @@
-package entity
+package models
+
+import "time"
 
 type OrderData struct {
 	ID         uint64
@@ -25,4 +27,23 @@ type OrderMetadata struct {
 	ItemCount  uint64
 }
 
+type OrderHistoryMetadata struct {
+	OrderID    uint64
+	UserID     uint64
+	OrderDate  time.Time
+	GrandTotal float32
+	ItemCount  uint64
+	CouponName *string
+	StatusName string
+}
+
+type ActiveCoupon struct {
+	ID        uint64
+	Code      string
+	Amount    uint64
+	ExpiredAt time.Time
+}
+
 type OrderDetails []*OrderDetail
+
+type ActiveCoupons []*ActiveCoupon

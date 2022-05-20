@@ -7,23 +7,23 @@ import (
 	"log"
 	"strings"
 
-	"github.com/nmluci/sumber-sari-garden/internal/entity"
+	"github.com/nmluci/sumber-sari-garden/internal/models"
 	"github.com/nmluci/sumber-sari-garden/pkg/database"
 	"github.com/nmluci/sumber-sari-garden/pkg/errors"
 )
 
 type ProductRepository interface {
 	CountProduct(ctx context.Context) (sum uint64, err error)
-	GetAllProduct(ctx context.Context, params *entity.ProductParameter) (res entity.ProductDetails, err error)
-	GetProductByID(ctx context.Context, id uint64) (res *entity.Product, err error)
-	StoreProduct(ctx context.Context, res *entity.Product) (id int64, err error)
-	UpdateProduct(ctx context.Context, res *entity.Product) (err error)
+	GetAllProduct(ctx context.Context, params *models.ProductParameter) (res models.ProductDetails, err error)
+	GetProductByID(ctx context.Context, id uint64) (res *models.Product, err error)
+	StoreProduct(ctx context.Context, res *models.Product) (id int64, err error)
+	UpdateProduct(ctx context.Context, res *models.Product) (err error)
 	DeleteProduct(ctx context.Context, id uint64) (err error)
 
-	GetAllCategory(ctx context.Context) (res entity.ProductCategories, err error)
-	GetCategoryByID(ctx context.Context, id uint64) (res *entity.ProductCategory, err error)
-	StoreCategory(ctx context.Context, res *entity.ProductCategory) (id int64, err error)
-	UpdateCategory(ctx context.Context, res *entity.ProductCategory) (err error)
+	GetAllCategory(ctx context.Context) (res models.ProductCategories, err error)
+	GetCategoryByID(ctx context.Context, id uint64) (res *models.ProductCategory, err error)
+	StoreCategory(ctx context.Context, res *models.ProductCategory) (id int64, err error)
+	UpdateCategory(ctx context.Context, res *models.ProductCategory) (err error)
 	DeleteCategory(ctx context.Context, id uint64) (err error)
 }
 
@@ -68,7 +68,7 @@ func (repo productRepositoryImpl) CountProduct(ctx context.Context) (sum uint64,
 	return
 }
 
-func (repo productRepositoryImpl) GetAllProduct(ctx context.Context, params *entity.ProductParameter) (res entity.ProductDetails, err error) {
+func (repo productRepositoryImpl) GetAllProduct(ctx context.Context, params *models.ProductParameter) (res models.ProductDetails, err error) {
 	query, err := repo.db.PrepareContext(ctx, fmt.Sprintf(GET_ALL_PRODUCT, params.Keyword, strings.Join(params.Categories, ", "), params.Order))
 	if err != nil {
 		log.Printf("[GetAllProduct] failed to prepare query, err => %+v\n", err)
@@ -84,7 +84,7 @@ func (repo productRepositoryImpl) GetAllProduct(ctx context.Context, params *ent
 	return mapProductDetails(rows)
 }
 
-func (repo productRepositoryImpl) GetProductByID(ctx context.Context, id uint64) (res *entity.Product, err error) {
+func (repo productRepositoryImpl) GetProductByID(ctx context.Context, id uint64) (res *models.Product, err error) {
 	query, err := repo.db.PrepareContext(ctx, GET_PRODUCT_BY_ID)
 	if err != nil {
 		log.Printf("[GetProductByID] failed to prepare query, err => %+v\n", err)
@@ -104,7 +104,7 @@ func (repo productRepositoryImpl) GetProductByID(ctx context.Context, id uint64)
 	return
 }
 
-func (repo productRepositoryImpl) StoreProduct(ctx context.Context, res *entity.Product) (id int64, err error) {
+func (repo productRepositoryImpl) StoreProduct(ctx context.Context, res *models.Product) (id int64, err error) {
 	tx, err := repo.db.BeginTx(ctx, nil)
 	if err != nil {
 		log.Printf("[StoreProduct] failed to start new transaction, err => %+v\n", err)
@@ -133,7 +133,7 @@ func (repo productRepositoryImpl) StoreProduct(ctx context.Context, res *entity.
 	return
 }
 
-func (repo productRepositoryImpl) UpdateProduct(ctx context.Context, res *entity.Product) (err error) {
+func (repo productRepositoryImpl) UpdateProduct(ctx context.Context, res *models.Product) (err error) {
 	tx, err := repo.db.BeginTx(ctx, nil)
 	if err != nil {
 		log.Printf("[UpdateProduct] failed to start new transaction, err => %+v\n", err)
@@ -189,7 +189,7 @@ func (repo *productRepositoryImpl) DeleteProduct(ctx context.Context, id uint64)
 	return
 }
 
-func (repo productRepositoryImpl) GetAllCategory(ctx context.Context) (res entity.ProductCategories, err error) {
+func (repo productRepositoryImpl) GetAllCategory(ctx context.Context) (res models.ProductCategories, err error) {
 	query, err := repo.db.PrepareContext(ctx, GET_ALL_CATEGORY)
 	if err != nil {
 		log.Printf("[GetAllCategory] failed to prepare query, err => %+v\n", err)
@@ -205,7 +205,7 @@ func (repo productRepositoryImpl) GetAllCategory(ctx context.Context) (res entit
 	return mapCategories(rows)
 }
 
-func (repo productRepositoryImpl) GetCategoryByID(ctx context.Context, id uint64) (res *entity.ProductCategory, err error) {
+func (repo productRepositoryImpl) GetCategoryByID(ctx context.Context, id uint64) (res *models.ProductCategory, err error) {
 	query, err := repo.db.PrepareContext(ctx, GET_CATEGORY_BY_ID)
 	if err != nil {
 		log.Printf("[GetCategoryByID] failed to prepare query, err => %+v\n", err)
@@ -225,7 +225,7 @@ func (repo productRepositoryImpl) GetCategoryByID(ctx context.Context, id uint64
 	return
 }
 
-func (repo productRepositoryImpl) StoreCategory(ctx context.Context, res *entity.ProductCategory) (id int64, err error) {
+func (repo productRepositoryImpl) StoreCategory(ctx context.Context, res *models.ProductCategory) (id int64, err error) {
 	tx, err := repo.db.BeginTx(ctx, nil)
 	if err != nil {
 		log.Printf("[StoreCategory] failed to start new transaction, err => %+v\n", err)
@@ -253,7 +253,7 @@ func (repo productRepositoryImpl) StoreCategory(ctx context.Context, res *entity
 	return
 }
 
-func (repo productRepositoryImpl) UpdateCategory(ctx context.Context, res *entity.ProductCategory) (err error) {
+func (repo productRepositoryImpl) UpdateCategory(ctx context.Context, res *models.ProductCategory) (err error) {
 	tx, err := repo.db.BeginTx(ctx, nil)
 	if err != nil {
 		log.Printf("[UpdateCateogry] failed to start new transaction, err => %+v\n", err)
@@ -309,17 +309,17 @@ func (repo productRepositoryImpl) DeleteCategory(ctx context.Context, id uint64)
 	return
 }
 
-func mapCategory(r *sql.Row) (res *entity.ProductCategory, err error) {
-	res = &entity.ProductCategory{}
+func mapCategory(r *sql.Row) (res *models.ProductCategory, err error) {
+	res = &models.ProductCategory{}
 	err = r.Scan(&res.ID, &res.Name)
 	return
 }
 
-func mapCategories(r *sql.Rows) (res entity.ProductCategories, err error) {
-	res = entity.ProductCategories{}
+func mapCategories(r *sql.Rows) (res models.ProductCategories, err error) {
+	res = models.ProductCategories{}
 
 	for r.Next() {
-		temp := &entity.ProductCategory{}
+		temp := &models.ProductCategory{}
 		err = r.Scan(&temp.ID, &temp.Name)
 		if err != nil {
 			log.Printf("[mapCategories] error while parsing query result, err => %+v\n", err)
@@ -331,18 +331,18 @@ func mapCategories(r *sql.Rows) (res entity.ProductCategories, err error) {
 	return
 }
 
-func mapProduct(r *sql.Row) (res *entity.Product, err error) {
-	res = &entity.Product{}
+func mapProduct(r *sql.Row) (res *models.Product, err error) {
+	res = &models.Product{}
 	err = r.Scan(&res.ID, &res.CategoryID, &res.Name, &res.Price, &res.Qty, &res.PictureURL, &res.Description)
 
 	return
 }
 
-func mapProductDetails(r *sql.Rows) (res entity.ProductDetails, err error) {
-	res = entity.ProductDetails{}
+func mapProductDetails(r *sql.Rows) (res models.ProductDetails, err error) {
+	res = models.ProductDetails{}
 
 	for r.Next() {
-		temp := &entity.ProductDetail{}
+		temp := &models.ProductDetail{}
 		err = r.Scan(&temp.ID, &temp.CategoryID, &temp.Name, &temp.CategoryName, &temp.Price, &temp.Qty, &temp.PictureURL, &temp.Description)
 		if err != nil {
 			log.Printf("[mapProductDetails] error while parsing query result, err => %+v\n", err)

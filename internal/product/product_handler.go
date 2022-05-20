@@ -35,6 +35,8 @@ func (ps *ProductHandler) InitHandler() {
 	protected.HandleFunc("/category", ps.StoreNewCategory()).Methods(http.MethodPost, http.MethodOptions)
 	protected.HandleFunc("/category/{id}", ps.UpdateCategory()).Methods(http.MethodPatch, http.MethodOptions)
 	protected.HandleFunc("/category/{id}", ps.DeleteCategory()).Methods(http.MethodDelete, http.MethodOptions)
+
+	// Coupon
 }
 
 func NewProductHandler(r *mux.Router, p *mux.Router, ps ProductService) *ProductHandler {
@@ -47,14 +49,12 @@ func (prd *ProductHandler) GetAllProduct() http.HandlerFunc {
 		err := json.NewDecoder(r.Body).Decode(data)
 		if err != nil && err != io.EOF {
 			log.Printf("[GetAllProduct] failed to parse JSON data, err => %+v", err)
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(err)
 		}
 
 		res, err := prd.ps.GetAllProduct(r.Context(), data)
 		if err != nil {
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(err)
 		}
 
 		responseutil.WriteSuccessResponse(w, http.StatusOK, res)
@@ -67,21 +67,18 @@ func (prd *ProductHandler) GetProductByID() http.HandlerFunc {
 		productID, ok := routeVar["id"]
 		if !ok {
 			log.Printf("[GetProductByID] failed to parsed productID data\n")
-			responseutil.WriteErrorResponse(w, errors.ErrUnknown)
-			return
+			panic(errors.ErrInvalidRequestBody)
 		}
 
 		pidParsed, err := strconv.ParseUint(productID, 10, 64)
 		if err != nil {
 			log.Printf("[GetProductByID] failed to convert productID, err => %+v\n", err)
-			responseutil.WriteErrorResponse(w, errors.ErrUnknown)
-			return
+			panic(errors.ErrInvalidRequestBody)
 		}
 
 		res, err := prd.ps.GetProductByID(r.Context(), pidParsed)
 		if err != nil {
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(err)
 		}
 
 		responseutil.WriteSuccessResponse(w, http.StatusOK, res)
@@ -94,14 +91,12 @@ func (prd *ProductHandler) StoreNewProduct() http.HandlerFunc {
 		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
 			log.Printf("[StoreNewProduct] failed to parse JSON data, err => %+v", err)
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(err)
 		}
 
 		err = prd.ps.StoreNewProduct(r.Context(), data)
 		if err != nil {
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(err)
 		}
 
 		responseutil.WriteSuccessResponse(w, http.StatusOK, nil)
@@ -114,30 +109,26 @@ func (prd *ProductHandler) UpdateProduct() http.HandlerFunc {
 		productID, ok := routeVar["id"]
 		if !ok {
 			log.Printf("[UpdateProduct] failed to parsed productID data\n")
-			responseutil.WriteErrorResponse(w, errors.ErrUnknown)
-			return
+			panic(errors.ErrInvalidRequestBody)
 		}
 
 		pidParsed, err := strconv.ParseUint(productID, 10, 64)
 		if err != nil {
 			log.Printf("[UpdateProduct] failed to convert productID, err => %+v\n", err)
-			responseutil.WriteErrorResponse(w, errors.ErrUnknown)
-			return
+			panic(errors.ErrInvalidRequestBody)
 		}
 
 		data := &dto.UpdateProductRequest{}
 		err = json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
 			log.Printf("[UpdateProduct] failed to parse JSON data, err => %+v", err)
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(errors.ErrInvalidRequestBody)
 		}
 
 		data.ID = pidParsed
 		err = prd.ps.UpdateProduct(r.Context(), data)
 		if err != nil {
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(err)
 		}
 
 		responseutil.WriteSuccessResponse(w, http.StatusOK, nil)
@@ -150,21 +141,18 @@ func (prd *ProductHandler) DeleteProduct() http.HandlerFunc {
 		productID, ok := routeVar["id"]
 		if !ok {
 			log.Printf("[DeleteProduct] failed to parsed productID data\n")
-			responseutil.WriteErrorResponse(w, errors.ErrUnknown)
-			return
+			panic(errors.ErrInvalidRequestBody)
 		}
 
 		pidParsed, err := strconv.ParseUint(productID, 10, 64)
 		if err != nil {
 			log.Printf("[DeleteProduct] failed to convert productID, err => %+v\n", err)
-			responseutil.WriteErrorResponse(w, errors.ErrUnknown)
-			return
+			panic(errors.ErrInvalidRequestBody)
 		}
 
 		err = prd.ps.DeleteProduct(r.Context(), pidParsed)
 		if err != nil {
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(err)
 		}
 
 		responseutil.WriteSuccessResponse(w, http.StatusOK, nil)
@@ -175,8 +163,7 @@ func (prd *ProductHandler) GetAllCategory() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		res, err := prd.ps.GetAllCategory(r.Context())
 		if err != nil {
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(err)
 		}
 
 		responseutil.WriteSuccessResponse(w, http.StatusOK, res)
@@ -189,14 +176,12 @@ func (prd *ProductHandler) StoreNewCategory() http.HandlerFunc {
 		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
 			log.Printf("[StoreNewCategory] failed to parse JSON data, err => %+v", err)
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(err)
 		}
 
 		err = prd.ps.StoreNewCategory(r.Context(), data)
 		if err != nil {
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(err)
 		}
 
 		responseutil.WriteSuccessResponse(w, http.StatusOK, nil)
@@ -209,30 +194,26 @@ func (prd *ProductHandler) UpdateCategory() http.HandlerFunc {
 		productID, ok := routeVar["id"]
 		if !ok {
 			log.Printf("[UpdateCategory] failed to parsed categoryID data\n")
-			responseutil.WriteErrorResponse(w, errors.ErrUnknown)
-			return
+			panic(errors.ErrInvalidRequestBody)
 		}
 
 		pidParsed, err := strconv.ParseUint(productID, 10, 64)
 		if err != nil {
 			log.Printf("[UpdateCategory] failed to convert categoryID, err => %+v\n", err)
-			responseutil.WriteErrorResponse(w, errors.ErrUnknown)
-			return
+			panic(errors.ErrInvalidRequestBody)
 		}
 
 		data := &dto.UpdateCategoryRequest{}
 		err = json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
 			log.Printf("[UpdateCategory] failed to parse JSON data, err => %+v", err)
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(errors.ErrInvalidRequestBody)
 		}
 
 		data.CategoryID = pidParsed
 		err = prd.ps.UpdateCategory(r.Context(), data)
 		if err != nil {
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(err)
 		}
 
 		responseutil.WriteSuccessResponse(w, http.StatusOK, nil)
@@ -245,21 +226,18 @@ func (prd *ProductHandler) DeleteCategory() http.HandlerFunc {
 		productID, ok := routeVar["id"]
 		if !ok {
 			log.Printf("[DeleteCategory] failed to parsed categoryID data\n")
-			responseutil.WriteErrorResponse(w, errors.ErrUnknown)
-			return
+			panic(errors.ErrInvalidRequestBody)
 		}
 
 		pidParsed, err := strconv.ParseUint(productID, 10, 64)
 		if err != nil {
 			log.Printf("[DeleteCategory] failed to convert categoryID, err => %+v\n", err)
-			responseutil.WriteErrorResponse(w, errors.ErrUnknown)
-			return
+			panic(errors.ErrInvalidRequestBody)
 		}
 
 		err = prd.ps.DeleteCategory(r.Context(), pidParsed)
 		if err != nil {
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(err)
 		}
 
 		responseutil.WriteSuccessResponse(w, http.StatusOK, nil)

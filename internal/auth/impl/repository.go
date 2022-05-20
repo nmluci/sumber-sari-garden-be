@@ -5,17 +5,17 @@ import (
 	"database/sql"
 	"log"
 
-	"github.com/nmluci/sumber-sari-garden/internal/entity"
+	"github.com/nmluci/sumber-sari-garden/internal/models"
 	"github.com/nmluci/sumber-sari-garden/pkg/database"
 	"github.com/nmluci/sumber-sari-garden/pkg/errors"
 )
 
 type AuthRepository interface {
-	StoreUserInfo(ctx context.Context, data entity.UserInfo) (err error)
-	StoreUserCred(ctx context.Context, data entity.UserCred) (userID int64, err error)
-	GetCredByEmail(ctx context.Context, email string) (usr *entity.UserCred, err error)
-	GetUserInfoByID(ctx context.Context, userID int64) (usr *entity.UserInfo, err error)
-	GetCredByID(ctx context.Context, userID int64) (usr *entity.UserCred, err error)
+	StoreUserInfo(ctx context.Context, data models.UserInfo) (err error)
+	StoreUserCred(ctx context.Context, data models.UserCred) (userID int64, err error)
+	GetCredByEmail(ctx context.Context, email string) (usr *models.UserCred, err error)
+	GetUserInfoByID(ctx context.Context, userID int64) (usr *models.UserInfo, err error)
+	GetCredByID(ctx context.Context, userID int64) (usr *models.UserCred, err error)
 }
 
 type authRepositoryImpl struct {
@@ -34,7 +34,7 @@ var (
 	FIND_USER_BY_ID    string = `SELECT first_name, last_name, phone, address FROM user_info WHERE id=?;`
 )
 
-func (auth authRepositoryImpl) StoreUserInfo(ctx context.Context, data entity.UserInfo) (err error) {
+func (auth authRepositoryImpl) StoreUserInfo(ctx context.Context, data models.UserInfo) (err error) {
 	_, err = auth.db.ExecContext(ctx, STORE_USER_INFO, data.UserID, data.FirstName, data.LastName, data.Phone, data.Address)
 	if err != nil {
 		log.Printf("[StoreUserInfo] err: %v\n", err)
@@ -44,7 +44,7 @@ func (auth authRepositoryImpl) StoreUserInfo(ctx context.Context, data entity.Us
 	return
 }
 
-func (auth authRepositoryImpl) StoreUserCred(ctx context.Context, data entity.UserCred) (userID int64, err error) {
+func (auth authRepositoryImpl) StoreUserCred(ctx context.Context, data models.UserCred) (userID int64, err error) {
 	stmt, err := auth.db.PrepareContext(ctx, STORE_USER_CRED)
 	if err != nil {
 		log.Printf("[StoreUserCred] err: %v\n", err)
@@ -66,7 +66,7 @@ func (auth authRepositoryImpl) StoreUserCred(ctx context.Context, data entity.Us
 	return
 }
 
-func (auth authRepositoryImpl) GetCredByEmail(ctx context.Context, email string) (usr *entity.UserCred, err error) {
+func (auth authRepositoryImpl) GetCredByEmail(ctx context.Context, email string) (usr *models.UserCred, err error) {
 	res := auth.db.QueryRowContext(ctx, FIND_CRED_BY_EMAIL, email)
 	usr, err = mapCredToEntity(res)
 	if err != nil && err != sql.ErrNoRows {
@@ -80,7 +80,7 @@ func (auth authRepositoryImpl) GetCredByEmail(ctx context.Context, email string)
 	return
 }
 
-func (auth authRepositoryImpl) GetUserInfoByID(ctx context.Context, userID int64) (usr *entity.UserInfo, err error) {
+func (auth authRepositoryImpl) GetUserInfoByID(ctx context.Context, userID int64) (usr *models.UserInfo, err error) {
 	res := auth.db.QueryRowContext(ctx, FIND_USER_BY_ID, userID)
 	usr, err = mapUserInfoToEntity(res)
 	if err != nil {
@@ -91,7 +91,7 @@ func (auth authRepositoryImpl) GetUserInfoByID(ctx context.Context, userID int64
 	return
 }
 
-func (auth authRepositoryImpl) GetCredByID(ctx context.Context, userID int64) (usr *entity.UserCred, err error) {
+func (auth authRepositoryImpl) GetCredByID(ctx context.Context, userID int64) (usr *models.UserCred, err error) {
 	res := auth.db.QueryRowContext(ctx, FIND_CRED_BY_ID, userID)
 	usr, err = mapCredToEntity(res)
 	if err != nil {
@@ -102,14 +102,14 @@ func (auth authRepositoryImpl) GetCredByID(ctx context.Context, userID int64) (u
 	return
 }
 
-func mapCredToEntity(row *sql.Row) (usr *entity.UserCred, err error) {
-	usr = &entity.UserCred{}
+func mapCredToEntity(row *sql.Row) (usr *models.UserCred, err error) {
+	usr = &models.UserCred{}
 	err = row.Scan(&usr.UserID, &usr.Email, &usr.Password, &usr.UserRole)
 	return
 }
 
-func mapUserInfoToEntity(row *sql.Row) (usr *entity.UserInfo, err error) {
-	usr = &entity.UserInfo{}
+func mapUserInfoToEntity(row *sql.Row) (usr *models.UserInfo, err error) {
+	usr = &models.UserInfo{}
 	err = row.Scan(&usr.FirstName, &usr.LastName, &usr.Phone, &usr.Address)
 	return
 }
