@@ -1,4 +1,4 @@
-package entity
+package models
 
 type ProductParameter struct {
 	Keyword    string

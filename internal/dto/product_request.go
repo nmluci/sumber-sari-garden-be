@@ -3,7 +3,7 @@ package dto
 import (
 	"strconv"
 
-	"github.com/nmluci/sumber-sari-garden/internal/entity"
+	"github.com/nmluci/sumber-sari-garden/internal/models"
 )
 
 type ProductSearchParams struct {
@@ -42,8 +42,8 @@ type UpdateCategoryRequest struct {
 	CategoryID uint64
 }
 
-func (dto *ProductSearchParams) ToEntity(cats entity.ProductCategories) (params *entity.ProductParameter) {
-	params = &entity.ProductParameter{
+func (dto *ProductSearchParams) ToEntity(cats models.ProductCategories) (params *models.ProductParameter) {
+	params = &models.ProductParameter{
 		Offset:  dto.Offset,
 		Keyword: dto.Keyword,
 	}
@@ -73,8 +73,8 @@ func (dto *ProductSearchParams) ToEntity(cats entity.ProductCategories) (params 
 	return
 }
 
-func (dto *NewProductRequest) ToEntity() (product *entity.Product) {
-	product = &entity.Product{
+func (dto *NewProductRequest) ToEntity() (product *models.Product) {
+	product = &models.Product{
 		Name:        dto.Name,
 		PictureURL:  dto.PictureURL,
 		Description: dto.Description,
@@ -86,16 +86,16 @@ func (dto *NewProductRequest) ToEntity() (product *entity.Product) {
 	return
 }
 
-func (dto *NewCategoryRequest) ToEntity() (category *entity.ProductCategory) {
-	category = &entity.ProductCategory{
+func (dto *NewCategoryRequest) ToEntity() (category *models.ProductCategory) {
+	category = &models.ProductCategory{
 		Name: dto.Name,
 	}
 
 	return
 }
 
-func (dto *UpdateProductRequest) ToEntity() (product *entity.Product) {
-	product = &entity.Product{
+func (dto *UpdateProductRequest) ToEntity() (product *models.Product) {
+	product = &models.Product{
 		ID:          dto.ID,
 		Name:        dto.Name,
 		PictureURL:  dto.PictureURL,
@@ -108,8 +108,8 @@ func (dto *UpdateProductRequest) ToEntity() (product *entity.Product) {
 	return
 }
 
-func (dto *UpdateCategoryRequest) ToEntity() (category *entity.ProductCategory) {
-	category = &entity.ProductCategory{
+func (dto *UpdateCategoryRequest) ToEntity() (category *models.ProductCategory) {
+	category = &models.ProductCategory{
 		ID:   dto.CategoryID,
 		Name: dto.Name,
 	}

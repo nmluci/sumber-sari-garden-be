@@ -3,7 +3,7 @@ package dto
 import (
 	"time"
 
-	"github.com/nmluci/sumber-sari-garden/internal/entity"
+	"github.com/nmluci/sumber-sari-garden/internal/models"
 )
 
 type UpsertItemRequest struct {
@@ -19,8 +19,8 @@ type HistoryParams struct {
 	DateEnd   time.Time
 }
 
-func (dto *UpsertItemRequest) ToEntity() (res *entity.OrderDetail) {
-	res = &entity.OrderDetail{
+func (dto *UpsertItemRequest) ToEntity() (res *models.OrderDetail) {
+	res = &models.OrderDetail{
 		ProductID: dto.ProductID,
 		Qty:       dto.Qty,
 	}

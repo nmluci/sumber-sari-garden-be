@@ -1,4 +1,4 @@
-package entity
+package models
 
 import "time"
 
@@ -29,6 +29,7 @@ type OrderMetadata struct {
 
 type OrderHistoryMetadata struct {
 	OrderID    uint64
+	UserID     uint64
 	OrderDate  time.Time
 	GrandTotal float32
 	ItemCount  uint64

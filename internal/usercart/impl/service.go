@@ -5,8 +5,8 @@ import (
 	"log"
 
 	"github.com/nmluci/sumber-sari-garden/internal/dto"
-	"github.com/nmluci/sumber-sari-garden/internal/entity"
 	"github.com/nmluci/sumber-sari-garden/internal/global/util/authutil"
+	"github.com/nmluci/sumber-sari-garden/internal/models"
 	"github.com/nmluci/sumber-sari-garden/pkg/errors"
 )
 
@@ -157,7 +157,7 @@ func (us *UsercartServiceImpl) Checkout(ctx context.Context, dto *dto.OrderCheck
 		*couponID = couponInfo.ID
 	}
 
-	validItem := entity.OrderDetails{}
+	validItem := models.OrderDetails{}
 	for _, itm := range data {
 		for _, c := range items {
 			if itm.ProductID == c.ProductID && itm.Qty == c.Qty {
@@ -203,7 +203,7 @@ func (us *UsercartServiceImpl) OrderHistory(ctx context.Context, params dto.Hist
 		return
 	}
 
-	items := entity.OrderDetails{}
+	items := models.OrderDetails{}
 	for _, itm := range meta {
 		orderInfo, err2 := us.repo.GetItemsByOrderID(ctx, itm.OrderID)
 		if err != nil {
@@ -214,6 +214,75 @@ func (us *UsercartServiceImpl) OrderHistory(ctx context.Context, params dto.Hist
 		items = append(items, orderInfo...)
 	}
 
-	log.Println(meta, items)
 	return dto.NewOrderHistoryResponse(params.UserID, meta, items)
+}
+
+func (us *UsercartServiceImpl) VerifyOrder(ctx context.Context, orderID uint64) (err error) {
+	usrID := authutil.GetUserIDFromCtx(ctx)
+	if priv := authutil.GetUserPrivFromCtx(ctx); priv != 1 {
+		log.Printf("[VerifyOrder] user doesn't have enough permission, user_id => %d\n", usrID)
+		err = errors.ErrUserPriv
+		return
+	}
+
+	if exists, err := us.repo.GetCartMetadataByOrderID(ctx, orderID); err != nil {
+		log.Printf("[VerifyOrder] an error occured while verifying order, orderID => %d, err => %+v\n", orderID, err)
+		return err
+	} else if exists == nil {
+		log.Printf("[VerifyOrder] order doesn't existed, orderID => %d, err => %+v\n", orderID, err)
+		return errors.ErrInvalidResources
+	}
+
+	err = us.repo.VerifyOrder(ctx, orderID)
+	if err != nil {
+		log.Printf("[VerifyOrder] an error occured while verifying order, orderID => %d, err => %+v\n", orderID, err)
+		return
+	}
+
+	return
+}
+
+func (us *UsercartServiceImpl) GetUnpaidOrder(ctx context.Context) (res []*dto.TrxBrief, err error) {
+	usrID := authutil.GetUserIDFromCtx(ctx)
+	if priv := authutil.GetUserPrivFromCtx(ctx); priv != 1 {
+		log.Printf("[VerifyOrder] user doesn't have enough permission, user_id => %d\n", usrID)
+		err = errors.ErrUserPriv
+		return
+	}
+
+	orders, err := us.repo.GetUnpaidOrder(ctx)
+	if err != nil {
+		log.Printf("[VerifyOrder] an error occured while fetching unpaid orders, err => %+v\n", err)
+		return
+	}
+
+	return dto.NewTrxBrief(orders)
+}
+
+func (us *UsercartServiceImpl) OrderHistoryAll(ctx context.Context, params dto.HistoryParams) (res map[uint64][]*dto.TrxMetadata, err error) {
+	usrID := authutil.GetUserIDFromCtx(ctx)
+	if priv := authutil.GetUserPrivFromCtx(ctx); priv != 1 {
+		log.Printf("[VerifyOrder] user doesn't have enough permission, user_id => %d\n", usrID)
+		err = errors.ErrUserPriv
+		return
+	}
+
+	meta, err := us.repo.GetHistoryMetadataAll(ctx, params)
+	if err != nil {
+		log.Printf("[OrderHistory] an error occured while fetching histories' metadata, err => %+v\n", err)
+		return
+	}
+
+	items := models.OrderDetails{}
+	for _, itm := range meta {
+		orderInfo, err2 := us.repo.GetItemsByOrderID(ctx, itm.OrderID)
+		if err != nil {
+			log.Printf("[OrderHistory] an error occured while fetching order's item, orderID => %d, err => %+v\n", itm.OrderID, err2)
+			return res, err2
+		}
+
+		items = append(items, orderInfo...)
+	}
+
+	return dto.NewOrderHistoriesResponse(meta, items)
 }

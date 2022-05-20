@@ -1,6 +1,6 @@
 package dto
 
-import "github.com/nmluci/sumber-sari-garden/internal/entity"
+import "github.com/nmluci/sumber-sari-garden/internal/models"
 
 type CheckoutItem struct {
 	ProductID uint64 `json:"product_id"`
@@ -12,11 +12,11 @@ type OrderCheckoutRequest struct {
 	Items      []*CheckoutItem `json:"items"`
 }
 
-func (dto *OrderCheckoutRequest) ToEntity() (res entity.OrderDetails, coupon string) {
-	res = entity.OrderDetails{}
+func (dto *OrderCheckoutRequest) ToEntity() (res models.OrderDetails, coupon string) {
+	res = models.OrderDetails{}
 
 	for _, itm := range dto.Items {
-		temp := &entity.OrderDetail{
+		temp := &models.OrderDetail{
 			ProductID: itm.ProductID,
 			Qty:       itm.Qty,
 		}

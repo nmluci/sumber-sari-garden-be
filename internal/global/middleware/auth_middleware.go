@@ -8,8 +8,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/nmluci/sumber-sari-garden/internal/auth"
-	"github.com/nmluci/sumber-sari-garden/internal/entity"
 	"github.com/nmluci/sumber-sari-garden/internal/global/util/responseutil"
+	"github.com/nmluci/sumber-sari-garden/internal/models"
 	"github.com/nmluci/sumber-sari-garden/pkg/errors"
 )
 
@@ -45,8 +45,8 @@ func AuthMiddleware(service auth.AuthService) mux.MiddlewareFunc {
 				return
 			}
 
-			var auth entity.AuthCtxKey = "user-ctx"
-			authCtx := context.WithValue(r.Context(), auth, &entity.UserContext{
+			var auth models.AuthCtxKey = "user-ctx"
+			authCtx := context.WithValue(r.Context(), auth, &models.UserContext{
 				UserID: user.UserID,
 				Priv:   user.UserRole,
 			})

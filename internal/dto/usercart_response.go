@@ -3,7 +3,7 @@ package dto
 import (
 	"log"
 
-	"github.com/nmluci/sumber-sari-garden/internal/entity"
+	"github.com/nmluci/sumber-sari-garden/internal/models"
 	"github.com/nmluci/sumber-sari-garden/pkg/errors"
 )
 
@@ -25,7 +25,7 @@ type UsercartResponse struct {
 	Items      []*CartItemResponse `json:"items"`
 }
 
-func NewUsercartResponse(meta *entity.OrderMetadata, data *entity.OrderData, items entity.OrderDetails) (res UsercartResponse, err error) {
+func NewUsercartResponse(meta *models.OrderMetadata, data *models.OrderData, items models.OrderDetails) (res UsercartResponse, err error) {
 	if meta == nil || data == nil || len(items) == 0 {
 		log.Printf("[NewUsercartResponse] failed to encode response data due to inconsisted data")
 		err = errors.ErrInvalidResources

@@ -1,8 +1,6 @@
 package dto
 
-import (
-	"github.com/nmluci/sumber-sari-garden/internal/entity"
-)
+import "github.com/nmluci/sumber-sari-garden/internal/models"
 
 type UserRegistrationRequest struct {
 	FirstName string `json:"first_name"`
@@ -19,8 +17,8 @@ type UserSignIn struct {
 	Password string `json:"password"`
 }
 
-func (dto *UserRegistrationRequest) ToEntity() (usr *entity.UserInfo, cred *entity.UserCred) {
-	usr = &entity.UserInfo{
+func (dto *UserRegistrationRequest) ToEntity() (usr *models.UserInfo, cred *models.UserCred) {
+	usr = &models.UserInfo{
 		FirstName: dto.FirstName,
 		LastName:  dto.LastName,
 		Phone:     dto.Phone,
@@ -31,7 +29,7 @@ func (dto *UserRegistrationRequest) ToEntity() (usr *entity.UserInfo, cred *enti
 		dto.RoleID = 2
 	}
 
-	cred = &entity.UserCred{
+	cred = &models.UserCred{
 		Email:    dto.Email,
 		Password: dto.Password,
 		UserRole: dto.RoleID,
@@ -40,8 +38,8 @@ func (dto *UserRegistrationRequest) ToEntity() (usr *entity.UserInfo, cred *enti
 	return
 }
 
-func (dto *UserSignIn) ToEntity() (cred *entity.UserCred) {
-	return &entity.UserCred{
+func (dto *UserSignIn) ToEntity() (cred *models.UserCred) {
+	return &models.UserCred{
 		Email:    dto.Email,
 		Password: dto.Password,
 	}

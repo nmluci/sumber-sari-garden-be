@@ -3,7 +3,7 @@ package dto
 import (
 	"log"
 
-	"github.com/nmluci/sumber-sari-garden/internal/entity"
+	"github.com/nmluci/sumber-sari-garden/internal/models"
 	"github.com/nmluci/sumber-sari-garden/pkg/errors"
 )
 
@@ -32,7 +32,7 @@ type CategoryResponse struct {
 
 type CategoriesResponse []*CategoryResponse
 
-func NewProductResponse(product *entity.Product, cat *entity.ProductCategory) (res *ProductResponse, err error) {
+func NewProductResponse(product *models.Product, cat *models.ProductCategory) (res *ProductResponse, err error) {
 	if product == nil || cat == nil {
 		log.Printf("[NewProductResponse] failed to encode response data due to incomplete data")
 		err = errors.ErrInvalidResources
@@ -53,7 +53,7 @@ func NewProductResponse(product *entity.Product, cat *entity.ProductCategory) (r
 	return
 }
 
-func NewProductsResponse(items entity.ProductDetails, limit uint64, offset uint64, total uint64) (res ProductsResponse, err error) {
+func NewProductsResponse(items models.ProductDetails, limit uint64, offset uint64, total uint64) (res ProductsResponse, err error) {
 	if items == nil {
 		log.Printf("[NewProductsResponse] failed to encode response data due to incomplete data")
 		err = errors.ErrInvalidResources
@@ -83,7 +83,7 @@ func NewProductsResponse(items entity.ProductDetails, limit uint64, offset uint6
 	return
 }
 
-func NewCategoryResponse(cat *entity.ProductCategory) (res *CategoryResponse, err error) {
+func NewCategoryResponse(cat *models.ProductCategory) (res *CategoryResponse, err error) {
 	if cat == nil {
 		log.Printf("[NewCategoryResponse] failed to encode response data due to incomplete data")
 		err = errors.ErrInvalidResources
@@ -98,7 +98,7 @@ func NewCategoryResponse(cat *entity.ProductCategory) (res *CategoryResponse, er
 	return
 }
 
-func NewCategoriesResponse(items entity.ProductCategories) (res CategoriesResponse, err error) {
+func NewCategoriesResponse(items models.ProductCategories) (res CategoriesResponse, err error) {
 	if items == nil {
 		log.Printf("[NewCategoriesResponse] failed to encode response data due to incomplete data")
 		err = errors.ErrInvalidResources

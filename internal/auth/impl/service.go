@@ -8,8 +8,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/nmluci/sumber-sari-garden/internal/dto"
-	"github.com/nmluci/sumber-sari-garden/internal/entity"
 	"github.com/nmluci/sumber-sari-garden/internal/global/config"
+	"github.com/nmluci/sumber-sari-garden/internal/models"
 	"github.com/nmluci/sumber-sari-garden/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -85,7 +85,7 @@ func (auth AuthServiceImpl) LoginUser(ctx context.Context, res *dto.UserSignIn) 
 	return dto.NewUserSignInResponse(userCred, userInfo, token)
 }
 
-func (auth AuthServiceImpl) FindUserByAccessToken(ctx context.Context, accessToken string) (*entity.UserCred, error) {
+func (auth AuthServiceImpl) FindUserByAccessToken(ctx context.Context, accessToken string) (*models.UserCred, error) {
 	config := config.GetConfig()
 
 	token, err := jwt.Parse(accessToken, func(t *jwt.Token) (interface{}, error) {
@@ -120,7 +120,7 @@ func (auth AuthServiceImpl) FindUserByAccessToken(ctx context.Context, accessTok
 	return user, nil
 }
 
-func (auth AuthServiceImpl) newAccessToken(user *entity.UserCred) (string, error) {
+func (auth AuthServiceImpl) newAccessToken(user *models.UserCred) (string, error) {
 	config := config.GetConfig()
 
 	claims := auth.newUserClaim(user.UserID, user.Email, config.JWT_AT_EXPIRATION)

@@ -9,6 +9,7 @@ import (
 	"github.com/nmluci/sumber-sari-garden/internal/constant"
 	"github.com/nmluci/sumber-sari-garden/internal/dto"
 	"github.com/nmluci/sumber-sari-garden/internal/global/util/responseutil"
+	"github.com/nmluci/sumber-sari-garden/pkg/errors"
 )
 
 type AuthHandler struct {
@@ -33,14 +34,12 @@ func (auth *AuthHandler) RegisterNewUser() http.HandlerFunc {
 		err := json.NewDecoder(r.Body).Decode(data)
 		if err != nil {
 			log.Printf("[RegisterNewUser] failed to parsed JSON data, err => %+v\n", err)
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(errors.ErrInvalidRequestBody)
 		}
 
 		err = auth.as.RegisterNewUser(r.Context(), data)
 		if err != nil {
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(err)
 		}
 
 		responseutil.WriteSuccessResponse(w, http.StatusOK, nil)
@@ -54,14 +53,12 @@ func (auth *AuthHandler) LoginUser() http.HandlerFunc {
 		err := json.NewDecoder(r.Body).Decode(data)
 		if err != nil {
 			log.Printf("[LoginUser] failed to parsed JSON data, err => %+v\n", err)
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(err)
 		}
 
 		res, err := auth.as.LoginUser(r.Context(), data)
 		if err != nil {
-			responseutil.WriteErrorResponse(w, err)
-			return
+			panic(err)
 		}
 
 		responseutil.WriteSuccessResponse(w, http.StatusOK, res)
