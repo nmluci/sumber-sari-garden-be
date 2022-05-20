@@ -37,6 +37,7 @@ func (ps *ProductHandler) InitHandler() {
 	protected.HandleFunc("/category/{id}", ps.DeleteCategory()).Methods(http.MethodDelete, http.MethodOptions)
 
 	// Coupon
+	routes.HandleFunc("/coupons", ps.GetActiveCoupons()).Methods(http.MethodGet, http.MethodOptions)
 }
 
 func NewProductHandler(r *mux.Router, p *mux.Router, ps ProductService) *ProductHandler {
@@ -241,5 +242,16 @@ func (prd *ProductHandler) DeleteCategory() http.HandlerFunc {
 		}
 
 		responseutil.WriteSuccessResponse(w, http.StatusOK, nil)
+	}
+}
+
+func (handler *ProductHandler) GetActiveCoupons() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data, err := handler.ps.GetActiveCoupons(r.Context())
+		if err != nil {
+			panic(err)
+		}
+
+		responseutil.WriteSuccessResponse(w, http.StatusOK, data)
 	}
 }

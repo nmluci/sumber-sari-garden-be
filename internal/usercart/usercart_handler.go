@@ -27,9 +27,9 @@ func (handler *UsercartHandler) InitHandler() {
 	routes.HandleFunc("", handler.UpsertItem()).Methods(http.MethodPost, http.MethodOptions)
 	routes.HandleFunc("/{id}", handler.RemoveItem()).Methods(http.MethodDelete, http.MethodOptions)
 	routes.HandleFunc("/checkout", handler.Checkout()).Methods(http.MethodPost, http.MethodOptions)
-	routes.HandleFunc("/history", handler.OrderHistory()).Methods(http.MethodGet, http.MethodOptions)
-	routes.HandleFunc("/verify/{id}", handler.VerifyOrder()).Methods(http.MethodPatch, http.MethodOptions)
 	routes.HandleFunc("/verify", handler.GetUnpaidOrder()).Methods(http.MethodGet, http.MethodOptions)
+	routes.HandleFunc("/verify/{id}", handler.VerifyOrder()).Methods(http.MethodPatch, http.MethodOptions)
+	routes.HandleFunc("/history", handler.OrderHistory()).Methods(http.MethodGet, http.MethodOptions)
 	routes.HandleFunc("/history/all", handler.OrderHistoryAll()).Methods(http.MethodGet, http.MethodOptions)
 }
 
@@ -258,3 +258,4 @@ func (handler *UsercartHandler) OrderHistoryAll() http.HandlerFunc {
 		responseutil.WriteSuccessResponse(w, http.StatusOK, data)
 	}
 }
+

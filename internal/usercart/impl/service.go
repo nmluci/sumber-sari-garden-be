@@ -120,8 +120,8 @@ func (us *UsercartServiceImpl) GetCart(ctx context.Context) (cart dto.UsercartRe
 
 func (us *UsercartServiceImpl) Checkout(ctx context.Context, dto *dto.OrderCheckoutRequest) (err error) {
 	var (
-		couponID *uint64 = nil
-		orderID  uint64  = 0
+		couponID        = new(uint64)
+		orderID  uint64 = 0
 	)
 
 	usr := authutil.GetUserIDFromCtx(ctx)
@@ -156,6 +156,7 @@ func (us *UsercartServiceImpl) Checkout(ctx context.Context, dto *dto.OrderCheck
 	} else {
 		*couponID = couponInfo.ID
 	}
+	log.Println(err)
 
 	validItem := models.OrderDetails{}
 	for _, itm := range data {
@@ -259,7 +260,7 @@ func (us *UsercartServiceImpl) GetUnpaidOrder(ctx context.Context) (res []*dto.T
 	return dto.NewTrxBrief(orders)
 }
 
-func (us *UsercartServiceImpl) OrderHistoryAll(ctx context.Context, params dto.HistoryParams) (res map[uint64][]*dto.TrxMetadata, err error) {
+func (us *UsercartServiceImpl) OrderHistoryAll(ctx context.Context, params dto.HistoryParams) (res dto.OrderHistoriesResponse, err error) {
 	usrID := authutil.GetUserIDFromCtx(ctx)
 	if priv := authutil.GetUserPrivFromCtx(ctx); priv != 1 {
 		log.Printf("[VerifyOrder] user doesn't have enough permission, user_id => %d\n", usrID)
@@ -275,10 +276,10 @@ func (us *UsercartServiceImpl) OrderHistoryAll(ctx context.Context, params dto.H
 
 	items := models.OrderDetails{}
 	for _, itm := range meta {
-		orderInfo, err2 := us.repo.GetItemsByOrderID(ctx, itm.OrderID)
+		orderInfo, err := us.repo.GetItemsByOrderID(ctx, itm.OrderID)
 		if err != nil {
-			log.Printf("[OrderHistory] an error occured while fetching order's item, orderID => %d, err => %+v\n", itm.OrderID, err2)
-			return res, err2
+			log.Printf("[OrderHistory] an error occured while fetching order's item, orderID => %d, err => %+v\n", itm.OrderID, err)
+			return res, err
 		}
 
 		items = append(items, orderInfo...)

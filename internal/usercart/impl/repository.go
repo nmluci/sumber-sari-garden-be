@@ -35,15 +35,15 @@ type usercartRepositoryImpl struct {
 
 var (
 	GET_ORDER_DETAIL_BY_ID = `SELECT od.id, od.order_id, od.product_id, p.name, p.price, od.qty, 
-		(case when o.coupon_id is not null then (c.amount*(p.price*od.qty)) else 0 end) disc, 
-		((p.price*od.qty)-(case when o.coupon_id is not null then (c.amount*(p.price*od.qty)) else 0 end)) subtotal FROM order_detail od
+		(case when o.coupon_id is not null then ((c.amount/100)*(p.price*od.qty)) else 0 end) disc, 
+		((p.price*od.qty)-(case when o.coupon_id is not null then ((c.amount/100)*(p.price*od.qty)) else 0 end)) subtotal FROM order_detail od
 		LEFT JOIN product p ON od.product_id=p.id LEFT JOIN order_data o ON od.order_id=o.id
 		LEFT JOIN coupon c ON o.coupon_id=c.id WHERE o.id=?`
-	GET_ORDER_METADATA = `SELECT o.id, SUM((p.price*od.qty)-(case when o.coupon_id is not null then (c.amount*(p.price*od.qty)) else 0 end)) grand_total, 
+	GET_ORDER_METADATA = `SELECT o.id, SUM((p.price*od.qty)-(case when o.coupon_id is not null then ((c.amount/100)*(p.price*od.qty)) else 0 end)) grand_total, 
 		COUNT(*) item_count FROM order_detail od LEFT JOIN product p ON od.product_id=p.id LEFT JOIN order_data o ON od.order_id=o.id
 		LEFT JOIN coupon c ON o.coupon_id=c.id GROUP BY o.id HAVING o.id=?`
 
-	HISTORY_METADATA = `SELECT o.id, o.user_id, o.created_at, SUM((p.price*od.qty)-(case when o.coupon_id is not null then (c.amount*(p.price*od.qty)) else 0 end)) grand_total, 
+	HISTORY_METADATA = `SELECT o.id, o.user_id, o.created_at, SUM((p.price*od.qty)-(case when o.coupon_id is not null then ((c.amount/100)*(p.price*od.qty)) else 0 end)) grand_total, 
 		COUNT(*) item_count, c.code, s.name FROM order_detail od 
 		LEFT JOIN product p ON od.product_id=p.id LEFT JOIN order_data o ON od.order_id=o.id LEFT JOIN order_status s ON s.id=o.status_id
 		LEFT JOIN coupon c ON o.coupon_id=c.id WHERE o.status_id = ? GROUP BY o.id, o.user_id`
@@ -64,11 +64,11 @@ var (
 	UPDATE_ITEM = `UPDATE order_detail SET qty=? WHERE product_id=? AND order_id=?`
 	DELETE_ITEM = `DELETE FROM order_detail WHERE product_id=? AND order_id=?`
 
-	GET_COUPON = `SELECT c.id, c.code, c.amount FROM coupon c WHERE c.code=? AND c.expired_at > NOW()`
+	GET_COUPON = `SELECT c.id, c.code, (c.amount/100), c.expired_at FROM coupon c WHERE c.code=? AND c.expired_at > NOW()`
 
 	CHECKOUT_ORDER = `UPDATE order_data SET created_at=NOW(), status_id=2, coupon_id=? WHERE order_data.user_id=? AND order_data.id=?`
 
-	GET_UNPAID_ORDER = `SELECT o.id, SUM((p.price*od.qty)-(case when o.coupon_id is not null then (c.amount*(p.price*od.qty)) else 0 end)) grand_total, 
+	GET_UNPAID_ORDER = `SELECT o.id, SUM((p.price*od.qty)-(case when o.coupon_id is not null then ((c.amount/100)*(p.price*od.qty)) else 0 end)) grand_total, 
 		COUNT(*) item_count FROM order_detail od LEFT JOIN product p ON od.product_id=p.id LEFT JOIN order_data o ON od.order_id=o.id
 		LEFT JOIN coupon c ON o.coupon_id=c.id WHERE o.status_id=2 GROUP BY o.id`
 	VERIFY_ORDER = `UPDATE order_data SET status_id=3 WHERE order_data.id=?`
