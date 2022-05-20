@@ -8,6 +8,7 @@
     - [Domain Table](#domain-table)
   - [Database Viewpoints](#database-viewpoints)
   - [Information System Viewpoint](#information-system-viewpoint)
+  - [Notes](#notes)
   
 
 ## Preface
@@ -50,3 +51,7 @@ Category | Implementations
 -------- | ---------------
 SCM      | Products
 TPS      | Order, Checkout
+
+## Notes
+- compiled program (as per 2022-05-21 00:27:00 AM), is in RELEASE section (FOR WINDOWS)
+- for other os, compiles it by yourself please :)
