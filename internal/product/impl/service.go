@@ -177,3 +177,13 @@ func (prd *ProductServiceImpl) DeleteCategory(ctx context.Context, id uint64) (e
 
 	return
 }
+
+func (prd *ProductServiceImpl) GetActiveCoupons(ctx context.Context) (res dto.ActiveCoupons, err error) {
+	coupons, err := prd.repo.GetAllCoupon(ctx)
+	if err != nil {
+		log.Printf("[GetActiveCoupons] an error occured while fetching active coupons, err => %+v\n", err)
+		return
+	}
+
+	return dto.NewActiveCouponResponse(coupons)
+}

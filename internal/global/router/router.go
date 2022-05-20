@@ -11,7 +11,7 @@ import (
 )
 
 func Init(globalRouter *mux.Router, db *database.DatabaseClient) {
-	globalRouter.Use(middleware.ErrorHandlingMiddleware)
+	// globalRouter.Use(middleware.ErrorHandlingMiddleware)
 	router := globalRouter.NewRoute().PathPrefix("/v1").Subrouter()
 	protectedRoute := router.NewRoute().Subrouter()
 

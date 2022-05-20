@@ -25,6 +25,8 @@ type ProductRepository interface {
 	StoreCategory(ctx context.Context, res *models.ProductCategory) (id int64, err error)
 	UpdateCategory(ctx context.Context, res *models.ProductCategory) (err error)
 	DeleteCategory(ctx context.Context, id uint64) (err error)
+
+	GetAllCoupon(ctx context.Context) (res models.ActiveCoupons, err error)
 }
 
 type productRepositoryImpl struct {
@@ -46,6 +48,8 @@ const (
 	STORE_NEW_CATEGORY = `INSERT INTO product_category(name) VALUES (?)`
 	UPDATE_CATEGORY    = `UPDATE product_category SET name=? WHERE id=?`
 	DELETE_CATEGORY    = `DELETE FROM product_category WHERE id=?`
+
+	GET_ALL_COUPON = `SELECT c.id, c.code, c.amount, c.expired_at FROM coupon c WHERE c.expired_at > NOW()`
 )
 
 func NewProductRepository(db *database.DatabaseClient) *productRepositoryImpl {
@@ -309,6 +313,28 @@ func (repo productRepositoryImpl) DeleteCategory(ctx context.Context, id uint64)
 	return
 }
 
+func (repo productRepositoryImpl) GetAllCoupon(ctx context.Context) (res models.ActiveCoupons, err error) {
+	query, err := repo.db.PrepareContext(ctx, GET_ALL_COUPON)
+	if err != nil {
+		log.Printf("[GetAllCoupon] failed to prepare query, err => %+v", err)
+		return
+	}
+
+	rows, err := query.QueryContext(ctx)
+	if err != nil {
+		log.Printf("[GetAllCoupon] failed to fetch coupon, err => %+v\n", err)
+		return
+	}
+
+	res, err = mapCoupons(rows)
+	if err != nil {
+		log.Printf("[GetAllCoupon] failed to fetch coupon, err => %+v\n", err)
+		return
+	}
+
+	return
+}
+
 func mapCategory(r *sql.Row) (res *models.ProductCategory, err error) {
 	res = &models.ProductCategory{}
 	err = r.Scan(&res.ID, &res.Name)
@@ -348,6 +374,23 @@ func mapProductDetails(r *sql.Rows) (res models.ProductDetails, err error) {
 			log.Printf("[mapProductDetails] error while parsing query result, err => %+v\n", err)
 			return nil, err
 		}
+		res = append(res, temp)
+	}
+
+	return
+}
+
+func mapCoupons(r *sql.Rows) (res models.ActiveCoupons, err error) {
+	res = models.ActiveCoupons{}
+
+	for r.Next() {
+		temp := &models.ActiveCoupon{}
+		err = r.Scan(&temp.ID, &temp.Code, &temp.Amount, &temp.ExpiredAt)
+		if err != nil {
+			log.Printf("[mapCoupons] an error occured while parsing query result, err => %+v\n", err)
+			return nil, err
+		}
+
 		res = append(res, temp)
 	}
 

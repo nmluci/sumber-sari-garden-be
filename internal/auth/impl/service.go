@@ -120,6 +120,22 @@ func (auth AuthServiceImpl) FindUserByAccessToken(ctx context.Context, accessTok
 	return user, nil
 }
 
+func (auth AuthServiceImpl) GetUserProfile(ctx context.Context, userID int64) (res *dto.UserProfileResponse, err error) {
+	cred, err := auth.repo.GetCredByID(ctx, userID)
+	if err != nil {
+		log.Printf("[GetUserProfile] failed while fetching user's data, userID => %d, err => %+v\n", userID, err)
+		return
+	}
+
+	info, err := auth.repo.GetUserInfoByID(ctx, userID)
+	if err != nil {
+		log.Printf("[GetUserProfile] failed while fetching user's info, userID => %d, err => %+v\n", userID, err)
+		return
+	}
+
+	return dto.NewUserProfileResponse(cred, info)
+}
+
 func (auth AuthServiceImpl) newAccessToken(user *models.UserCred) (string, error) {
 	config := config.GetConfig()
 
