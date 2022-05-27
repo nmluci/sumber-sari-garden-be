@@ -38,9 +38,10 @@ type OrderHistoryResponse struct {
 }
 
 type ActiveCoupon struct {
-	Code      string  `json:"code"`
-	Amount    float32 `json:"amount"`
-	ExpiredAt string  `json:"expired_at"`
+	Code        string  `json:"code"`
+	Amount      float32 `json:"amount"`
+	ExpiredAt   string  `json:"expired_at"`
+	Description *string `json:"description"`
 }
 
 type OrderHistoriesResponse map[uint64][]*TrxMetadata
@@ -158,9 +159,10 @@ func NewActiveCouponResponse(coupons models.ActiveCoupons) (res ActiveCoupons, e
 
 	for _, c := range coupons {
 		temp := &ActiveCoupon{
-			Code:      c.Code,
-			Amount:    c.Amount,
-			ExpiredAt: timeutil.FormatLocalTime(c.ExpiredAt, "2006-01-02 15:04:05"),
+			Code:        c.Code,
+			Amount:      c.Amount,
+			ExpiredAt:   timeutil.FormatLocalTime(c.ExpiredAt, "2006-01-02 15:04:05"),
+			Description: c.Description,
 		}
 		res = append(res, temp)
 	}

@@ -38,10 +38,11 @@ type OrderHistoryMetadata struct {
 }
 
 type ActiveCoupon struct {
-	ID        uint64
-	Code      string
-	Amount    float32
-	ExpiredAt time.Time
+	ID          uint64
+	Code        string
+	Amount      float32
+	Description *string
+	ExpiredAt   time.Time
 }
 
 type OrderDetails []*OrderDetail

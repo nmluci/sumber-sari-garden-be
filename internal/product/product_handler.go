@@ -247,7 +247,25 @@ func (prd *ProductHandler) DeleteCategory() http.HandlerFunc {
 
 func (handler *ProductHandler) GetActiveCoupons() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := handler.ps.GetActiveCoupons(r.Context())
+		query := r.URL.Query()
+
+		limit := query.Get("limit")
+		limitParsed, err := strconv.ParseInt(limit, 10, 64)
+		if err != nil && limit != "" {
+			panic(errors.ErrInvalidRequestBody)
+		} else if limit == "" {
+			limitParsed = 10
+		}
+
+		offset := query.Get("offset")
+		offsetParsed, err := strconv.ParseInt(offset, 10, 64)
+		if err != nil && offset != "" {
+			panic(errors.ErrInvalidRequestBody)
+		} else if offset == "" {
+			offsetParsed = 0
+		}
+
+		data, err := handler.ps.GetActiveCoupons(r.Context(), limitParsed, offsetParsed)
 		if err != nil {
 			panic(err)
 		}

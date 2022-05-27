@@ -26,7 +26,7 @@ type ProductRepository interface {
 	UpdateCategory(ctx context.Context, res *models.ProductCategory) (err error)
 	DeleteCategory(ctx context.Context, id uint64) (err error)
 
-	GetAllCoupon(ctx context.Context) (res models.ActiveCoupons, err error)
+	GetAllCoupon(ctx context.Context, limit int64, offset int64) (res models.ActiveCoupons, err error)
 }
 
 type productRepositoryImpl struct {
@@ -49,7 +49,7 @@ const (
 	UPDATE_CATEGORY    = `UPDATE product_category SET name=? WHERE id=?`
 	DELETE_CATEGORY    = `DELETE FROM product_category WHERE id=?`
 
-	GET_ALL_COUPON = `SELECT c.id, c.code, c.amount, c.expired_at FROM coupon c WHERE c.expired_at > NOW()`
+	GET_ALL_COUPON = `SELECT c.id, c.code, c.amount, c.description, c.expired_at FROM coupon c WHERE c.expired_at > NOW() LIMIT ? OFFSET ?`
 )
 
 func NewProductRepository(db *database.DatabaseClient) *productRepositoryImpl {
@@ -313,14 +313,14 @@ func (repo productRepositoryImpl) DeleteCategory(ctx context.Context, id uint64)
 	return
 }
 
-func (repo productRepositoryImpl) GetAllCoupon(ctx context.Context) (res models.ActiveCoupons, err error) {
+func (repo productRepositoryImpl) GetAllCoupon(ctx context.Context, limit int64, offset int64) (res models.ActiveCoupons, err error) {
 	query, err := repo.db.PrepareContext(ctx, GET_ALL_COUPON)
 	if err != nil {
 		log.Printf("[GetAllCoupon] failed to prepare query, err => %+v", err)
 		return
 	}
 
-	rows, err := query.QueryContext(ctx)
+	rows, err := query.QueryContext(ctx, limit, offset*limit)
 	if err != nil {
 		log.Printf("[GetAllCoupon] failed to fetch coupon, err => %+v\n", err)
 		return
@@ -385,7 +385,7 @@ func mapCoupons(r *sql.Rows) (res models.ActiveCoupons, err error) {
 
 	for r.Next() {
 		temp := &models.ActiveCoupon{}
-		err = r.Scan(&temp.ID, &temp.Code, &temp.Amount, &temp.ExpiredAt)
+		err = r.Scan(&temp.ID, &temp.Code, &temp.Amount, &temp.Description, &temp.ExpiredAt)
 		if err != nil {
 			log.Printf("[mapCoupons] an error occured while parsing query result, err => %+v\n", err)
 			return nil, err
