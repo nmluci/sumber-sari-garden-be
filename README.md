@@ -8,6 +8,7 @@
     - [Domain Table](#domain-table)
   - [Database Viewpoints](#database-viewpoints)
   - [Information System Viewpoint](#information-system-viewpoint)
+  - [Queries Ran](#queries-ran)
   - [Notes](#notes)
   
 
@@ -52,6 +53,8 @@ Category | Implementations
 SCM      | Products
 TPS      | Order, Checkout
 
+## Queries Ran
+[Click Me!](/docs/queries.md)
 ## Notes
 - compiled program (as per 2022-05-21 00:27:00 AM), is in RELEASE section (FOR WINDOWS)
 - for other os, compiles it by yourself please :)
