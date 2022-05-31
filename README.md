@@ -49,7 +49,7 @@ usercart | Carts, Checkout, Verification
 
 ## Information System Viewpoint
 Category | Implementations
--------- | ---------------``
+-------- | ---------------
 SCM      | Products
 TPS      | Order, Checkout
 
