@@ -17,6 +17,7 @@ type TrxItem struct {
 }
 
 type TrxMetadata struct {
+	UserId     uint64     `json:"user_id"`
 	OrderID    uint64     `json:"order_id"`
 	OrderDate  string     `json:"order_date"`
 	Status     string     `json:"order_status"`
@@ -44,22 +45,16 @@ type ActiveCoupon struct {
 	Description *string `json:"description"`
 }
 
-type OrderHistoriesResponse map[uint64][]*TrxMetadata
+type OrderHistoriesResponse []*TrxMetadata
 
 type ActiveCoupons []*ActiveCoupon
 
 func NewOrderHistoriesResponse(meta []*models.OrderHistoryMetadata, items models.OrderDetails) (res OrderHistoriesResponse, err error) {
-	res = make(OrderHistoriesResponse)
-
+	res = []*TrxMetadata{}
 	for mi, m := range meta {
-		if _, ok := res[m.UserID]; !ok {
-			res[m.UserID] = []*TrxMetadata{}
-		}
-
-		order := res[m.UserID]
-
 		trx := &TrxMetadata{
 			OrderID:    m.OrderID,
+			UserId:     m.UserID,
 			OrderDate:  timeutil.FormatLocalTime(m.OrderDate, "2006-01-02 15:04:05"),
 			Status:     m.StatusName,
 			ItemCount:  m.ItemCount,
@@ -90,8 +85,7 @@ func NewOrderHistoriesResponse(meta []*models.OrderHistoryMetadata, items models
 			meta = append(meta[mi:], meta[:mi+1]...)
 		}
 
-		order = append(order, trx)
-		res[m.UserID] = order
+		res = append(res, trx)
 	}
 
 	return
