@@ -1,6 +1,9 @@
 package dto
 
-import "github.com/nmluci/sumber-sari-garden/internal/models"
+import (
+	"github.com/nmluci/sumber-sari-garden/internal/global/util/timeutil"
+	"github.com/nmluci/sumber-sari-garden/internal/models"
+)
 
 type CheckoutItem struct {
 	ProductID uint64 `json:"product_id"`
@@ -24,4 +27,15 @@ func (dto *OrderCheckoutRequest) ToEntity() (res models.OrderDetails, coupon str
 	}
 
 	return res, dto.CouponCode
+}
+
+func (dto *Coupon) ToEntity() (res *models.Coupon) {
+	res = &models.Coupon{
+		Code:        dto.Code,
+		Amount:      dto.Amount,
+		Description: dto.Description,
+	}
+
+	res.ExpiredAt, _ = timeutil.ParseLocalTime(dto.ExpiredAt, "2006-01-02 15:04:05")
+	return
 }

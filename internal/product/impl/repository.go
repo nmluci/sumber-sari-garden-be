@@ -26,7 +26,13 @@ type ProductRepository interface {
 	UpdateCategory(ctx context.Context, res *models.ProductCategory) (err error)
 	DeleteCategory(ctx context.Context, id uint64) (err error)
 
-	GetAllCoupon(ctx context.Context, limit int64, offset int64) (res models.ActiveCoupons, err error)
+	GetActiveCoupon(ctx context.Context, limit int64, offset int64) (res models.Coupons, err error)
+	GetCouponByCode(ctx context.Context, code string) (res *models.Coupon, err error)
+	GetCouponByID(ctx context.Context, id int64) (res *models.Coupon, err error)
+	GetAllCoupon(ctx context.Context, limit int64, offset int64) (res models.Coupons, err error)
+	StoreCoupon(ctx context.Context, data *models.Coupon) (err error)
+	UpdateCoupon(ctx context.Context, id int64, data *models.Coupon) (err error)
+	DeleteCoupon(ctx context.Context, id int64) (err error)
 }
 
 type productRepositoryImpl struct {
@@ -49,7 +55,13 @@ const (
 	UPDATE_CATEGORY    = `UPDATE product_category SET name=? WHERE id=?`
 	DELETE_CATEGORY    = `DELETE FROM product_category WHERE id=?`
 
-	GET_ALL_COUPON = `SELECT c.id, c.code, c.amount, c.description, c.expired_at FROM coupon c WHERE c.expired_at > NOW() LIMIT ? OFFSET ?`
+	GET_ALL_ACTIVE_COUPON = `SELECT c.id, c.code, c.amount, c.description, c.expired_at FROM coupon c WHERE c.expired_at > NOW() LIMIT ? OFFSET ?`
+	GET_ALL_COUPON        = `SELECT c.id, c.code, c.amount, c.description, c.expired_at FROM coupon c LIMIT ? OFFSET ?`
+	GET_COUPON_BY_CODE    = `SELECT c.id, c.code, c.amount, c.description, c.expired_at FROM coupon c WHERE c.code LIKE "%%%s%%" LIMIT 1`
+	GET_COUPON_BY_ID      = `SELECT c.id, c.code, c.amount, c.description, c.expired_at FROM coupon c WHERE c.id=? LIMIT 1`
+	STORE_NEW_COUPON      = `INSERT INTO coupon(code, amount, description, expired_at) VALUES (?, ?, ?, ?)`
+	UPDATE_COUPON         = `UPDATE coupon SET code=?, amount=?, description=?, expired_at=? WHERE id=?`
+	DELETE_COUPON         = `DELETE FROM coupon WHERE id=?`
 )
 
 func NewProductRepository(db *database.DatabaseClient) *productRepositoryImpl {
@@ -115,6 +127,8 @@ func (repo productRepositoryImpl) StoreProduct(ctx context.Context, res *models.
 		return
 	}
 
+	defer tx.Rollback()
+
 	query, err := tx.PrepareContext(ctx, STORE_NEW_PRODUCT)
 	if err != nil {
 		log.Printf("[StoreProduct] failed to prepare query, err => %+v\n", err)
@@ -129,7 +143,6 @@ func (repo productRepositoryImpl) StoreProduct(ctx context.Context, res *models.
 
 	if err = tx.Commit(); err != nil {
 		log.Printf("[StoreProduct] transaction failed, err => %+v\n", err)
-		tx.Rollback()
 		return
 	}
 
@@ -143,6 +156,8 @@ func (repo productRepositoryImpl) UpdateProduct(ctx context.Context, res *models
 		log.Printf("[UpdateProduct] failed to start new transaction, err => %+v\n", err)
 		return
 	}
+
+	defer tx.Rollback()
 
 	query, err := tx.PrepareContext(ctx, UPDATE_PRODUCT)
 	if err != nil {
@@ -158,7 +173,6 @@ func (repo productRepositoryImpl) UpdateProduct(ctx context.Context, res *models
 
 	if err = tx.Commit(); err != nil {
 		log.Printf("[UpdateProduct] failed to commit transaction, err => %+v\n", err)
-		tx.Rollback()
 		return
 	}
 
@@ -171,6 +185,8 @@ func (repo *productRepositoryImpl) DeleteProduct(ctx context.Context, id uint64)
 		log.Printf("[DeleteProduct] failed to start new transaction, err => %+v\n", err)
 		return
 	}
+
+	defer tx.Rollback()
 
 	query, err := tx.PrepareContext(ctx, DELETE_PRODUCT)
 	if err != nil {
@@ -185,7 +201,6 @@ func (repo *productRepositoryImpl) DeleteProduct(ctx context.Context, id uint64)
 	}
 
 	if err = tx.Commit(); err != nil {
-		tx.Rollback()
 		log.Printf("[DeleteProduct] failed to commit transaction, err => %+v\n", err)
 		return
 	}
@@ -236,6 +251,8 @@ func (repo productRepositoryImpl) StoreCategory(ctx context.Context, res *models
 		return
 	}
 
+	defer tx.Rollback()
+
 	query, err := tx.PrepareContext(ctx, STORE_NEW_CATEGORY)
 	if err != nil {
 		log.Printf("[StoreCategory] failed to prepare query, err => %+v\n", err)
@@ -264,6 +281,8 @@ func (repo productRepositoryImpl) UpdateCategory(ctx context.Context, res *model
 		return
 	}
 
+	defer tx.Rollback()
+
 	query, err := tx.PrepareContext(ctx, UPDATE_CATEGORY)
 	if err != nil {
 		log.Printf("[UpdateCategory] failed to prepare query, err => %+v\n", err)
@@ -277,7 +296,6 @@ func (repo productRepositoryImpl) UpdateCategory(ctx context.Context, res *model
 	}
 
 	if err = tx.Commit(); err != nil {
-		tx.Rollback()
 		log.Printf("[UpdateCategory] failed to commit transaction, err => %+v\n", err)
 		return
 	}
@@ -292,6 +310,8 @@ func (repo productRepositoryImpl) DeleteCategory(ctx context.Context, id uint64)
 		return
 	}
 
+	defer tx.Rollback()
+
 	query, err := tx.PrepareContext(ctx, DELETE_CATEGORY)
 	if err != nil {
 		log.Printf("[DeleteCategory] failed to prepare query, err => %+v\n", err)
@@ -305,7 +325,6 @@ func (repo productRepositoryImpl) DeleteCategory(ctx context.Context, id uint64)
 	}
 
 	if err = tx.Commit(); err != nil {
-		tx.Rollback()
 		log.Printf("[DeleteCategory] failed to commit transaction, err => %+v\n", err)
 		return
 	}
@@ -313,7 +332,29 @@ func (repo productRepositoryImpl) DeleteCategory(ctx context.Context, id uint64)
 	return
 }
 
-func (repo productRepositoryImpl) GetAllCoupon(ctx context.Context, limit int64, offset int64) (res models.ActiveCoupons, err error) {
+func (repo productRepositoryImpl) GetActiveCoupon(ctx context.Context, limit int64, offset int64) (res models.Coupons, err error) {
+	query, err := repo.db.PrepareContext(ctx, GET_ALL_ACTIVE_COUPON)
+	if err != nil {
+		log.Printf("[GetActiveCoupon] failed to prepare query, err => %+v", err)
+		return
+	}
+
+	rows, err := query.QueryContext(ctx, limit, offset*limit)
+	if err != nil {
+		log.Printf("[GetActiveCoupon] failed to fetch coupon, err => %+v\n", err)
+		return
+	}
+
+	res, err = mapCoupons(rows)
+	if err != nil {
+		log.Printf("[GetActiveCoupon] failed to fetch coupon, err => %+v\n", err)
+		return
+	}
+
+	return
+}
+
+func (repo productRepositoryImpl) GetAllCoupon(ctx context.Context, limit int64, offset int64) (res models.Coupons, err error) {
 	query, err := repo.db.PrepareContext(ctx, GET_ALL_COUPON)
 	if err != nil {
 		log.Printf("[GetAllCoupon] failed to prepare query, err => %+v", err)
@@ -329,6 +370,103 @@ func (repo productRepositoryImpl) GetAllCoupon(ctx context.Context, limit int64,
 	res, err = mapCoupons(rows)
 	if err != nil {
 		log.Printf("[GetAllCoupon] failed to fetch coupon, err => %+v\n", err)
+		return
+	}
+
+	return
+}
+
+func (repo *productRepositoryImpl) GetCouponByCode(ctx context.Context, code string) (res *models.Coupon, err error) {
+	data := repo.db.QueryRowContext(ctx, fmt.Sprintf(GET_COUPON_BY_CODE, code))
+	res, err = mapCoupon(data)
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("[GetCouponByCode] failed to fetch coupon by code, code => %s, err => %+v\n", code, err)
+		return
+	} else if err == sql.ErrNoRows {
+		log.Printf("[GetCouponByCode] coupon not existed\n")
+		return nil, errors.ErrInvalidResources
+	}
+
+	return
+}
+
+func (repo *productRepositoryImpl) GetCouponByID(ctx context.Context, id int64) (res *models.Coupon, err error) {
+	data := repo.db.QueryRowContext(ctx, GET_COUPON_BY_ID, id)
+	res, err = mapCoupon(data)
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("[GetCouponByID] failed to fetch coupon by code, code => %d, err => %+v\n", id, err)
+		return
+	} else if err == sql.ErrNoRows {
+		log.Printf("[GetCouponByID] coupon not existed\n")
+		return nil, errors.ErrInvalidResources
+	}
+
+	return
+}
+
+func (repo productRepositoryImpl) StoreCoupon(ctx context.Context, data *models.Coupon) (err error) {
+	tx, err := repo.db.BeginTx(ctx, nil)
+	if err != nil {
+		log.Printf("[StoreCoupon] failed to start new transaction, err => %+v\n", err)
+		return
+	}
+
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx, STORE_NEW_COUPON, data.Code, data.Amount, data.Description, data.ExpiredAt)
+	if err != nil {
+		log.Printf("[StoreCoupon] failed to store new coupon, err => %+v\n", err)
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.Printf("[StoreCoupon] failed to commit transaction, err => %+v\n", err)
+		return
+	}
+
+	return
+}
+
+func (repo productRepositoryImpl) UpdateCoupon(ctx context.Context, id int64, data *models.Coupon) (err error) {
+	tx, err := repo.db.BeginTx(ctx, nil)
+	if err != nil {
+		log.Printf("[UpdateCoupon] failed to start new transaction, err => %+v\n", err)
+		return
+	}
+
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx, UPDATE_COUPON, data.Code, data.Amount, data.Description, data.ExpiredAt, id)
+	if err != nil {
+		log.Printf("[UpdateCoupon] failed to update coupon data, err => %+v\n", err)
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.Printf("[UpdateCoupon] failed to commit transaction, err => %+v\n", err)
+		return
+	}
+
+	return
+}
+
+func (repo productRepositoryImpl) DeleteCoupon(ctx context.Context, id int64) (err error) {
+	tx, err := repo.db.BeginTx(ctx, nil)
+	if err != nil {
+		log.Printf("[DeleteCoupon] failed to start new transaction, err => %+v\n", err)
+		return
+	}
+
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx, DELETE_COUPON, id)
+	if err != nil {
+		log.Printf("[DeleteCoupon] failed to delete coupon, id => %d, err => %+v\n", id, err)
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.Printf("[DeleteCoupon] failed to commit transaction, err => %+v\n", err)
 		return
 	}
 
@@ -380,11 +518,11 @@ func mapProductDetails(r *sql.Rows) (res models.ProductDetails, err error) {
 	return
 }
 
-func mapCoupons(r *sql.Rows) (res models.ActiveCoupons, err error) {
-	res = models.ActiveCoupons{}
+func mapCoupons(r *sql.Rows) (res models.Coupons, err error) {
+	res = models.Coupons{}
 
 	for r.Next() {
-		temp := &models.ActiveCoupon{}
+		temp := &models.Coupon{}
 		err = r.Scan(&temp.ID, &temp.Code, &temp.Amount, &temp.Description, &temp.ExpiredAt)
 		if err != nil {
 			log.Printf("[mapCoupons] an error occured while parsing query result, err => %+v\n", err)
@@ -394,5 +532,11 @@ func mapCoupons(r *sql.Rows) (res models.ActiveCoupons, err error) {
 		res = append(res, temp)
 	}
 
+	return
+}
+
+func mapCoupon(r *sql.Row) (res *models.Coupon, err error) {
+	res = &models.Coupon{}
+	err = r.Scan(&res.ID, &res.Code, &res.Amount, &res.Description, &res.ExpiredAt)
 	return
 }

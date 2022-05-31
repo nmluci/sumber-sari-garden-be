@@ -37,7 +37,8 @@ type OrderHistoryResponse struct {
 	Trx    []*TrxMetadata `json:"trx"`
 }
 
-type ActiveCoupon struct {
+type Coupon struct {
+	ID          uint64  `json:"coupon_id"`
 	Code        string  `json:"code"`
 	Amount      float32 `json:"amount"`
 	ExpiredAt   string  `json:"expired_at"`
@@ -46,7 +47,7 @@ type ActiveCoupon struct {
 
 type OrderHistoriesResponse map[uint64][]*TrxMetadata
 
-type ActiveCoupons []*ActiveCoupon
+type Coupons []*Coupon
 
 func NewOrderHistoriesResponse(meta []*models.OrderHistoryMetadata, items models.OrderDetails) (res OrderHistoriesResponse, err error) {
 	res = make(OrderHistoriesResponse)
@@ -148,22 +149,27 @@ func NewOrderHistoryResponse(userID uint64, meta []*models.OrderHistoryMetadata,
 	return
 }
 
-func NewActiveCouponResponse(coupons models.ActiveCoupons) (res ActiveCoupons, err error) {
+func NewCouponResponse(coupons models.Coupons, isAdmin bool) (res Coupons, err error) {
 	if len(coupons) == 0 {
 		log.Printf("[NewActiveCouponResponse] failed to encode response data due to incomplete data\n")
 		err = errors.ErrInvalidResources
 		return
 	}
 
-	res = []*ActiveCoupon{}
+	res = Coupons{}
 
 	for _, c := range coupons {
-		temp := &ActiveCoupon{
+		temp := &Coupon{
 			Code:        c.Code,
 			Amount:      c.Amount,
 			ExpiredAt:   timeutil.FormatLocalTime(c.ExpiredAt, "2006-01-02 15:04:05"),
 			Description: c.Description,
 		}
+
+		if isAdmin {
+			temp.ID = c.ID
+		}
+
 		res = append(res, temp)
 	}
 

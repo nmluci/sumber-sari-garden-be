@@ -1,6 +1,6 @@
 $cmd = $args[0]
 $params = $args[1]
-$db_addr = "mysql://root:@tcp(localhost:3306)/main_db"
+$db_addr = "mysql://root:@tcp(localhost:3306)/main_db?parseTime=true&multiStatements=true"
 
 if (($cmd -eq "up") -or ($cmd -eq "down" )) {
     if ($params -ne "") {
