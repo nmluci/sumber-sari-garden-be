@@ -43,7 +43,7 @@ const (
 	UPDATE_PRODUCT    = `UPDATE product SET category_id = ?, name=?, price=?, qty=?, url=?, description=? WHERE id=?`
 	DELETE_PRODUCT    = `DELETE FROM product WHERE id=?`
 
-	GET_ALL_CATEGORY   = `SELECT c.id, c.name FROM product_category c ORDER BY ASC`
+	GET_ALL_CATEGORY   = `SELECT c.id, c.name FROM product_category c ORDER BY c.id ASC`
 	GET_CATEGORY_BY_ID = `SELECT c.id, c.name FROM product_category c WHERE c.id=?`
 	STORE_NEW_CATEGORY = `INSERT INTO product_category(name) VALUES (?)`
 	UPDATE_CATEGORY    = `UPDATE product_category SET name=? WHERE id=?`
