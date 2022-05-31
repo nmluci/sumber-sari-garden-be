@@ -22,7 +22,7 @@ type UsercartRepository interface {
 	UpdateItem(ctx context.Context, orderID uint64, productID uint64, qty uint64) (err error)
 	RemoveItem(ctx context.Context, orderID uint64, productID uint64) (err error)
 	GetHistoryMetadata(ctx context.Context, params dto.HistoryParams) (meta []*models.OrderHistoryMetadata, err error)
-	GetCouponByCode(ctx context.Context, code string) (res *models.ActiveCoupon, err error)
+	GetCouponByCode(ctx context.Context, code string) (res *models.Coupon, err error)
 	Checkout(ctx context.Context, userID int64, orderID uint64, couponID *uint64) (err error)
 	VerifyOrder(ctx context.Context, orderID uint64) (err error)
 	GetUnpaidOrder(ctx context.Context) (res []*models.OrderMetadata, err error)
@@ -304,7 +304,7 @@ func (repo *usercartRepositoryImpl) GetHistoryMetadata(ctx context.Context, para
 	return
 }
 
-func (repo *usercartRepositoryImpl) GetCouponByCode(ctx context.Context, code string) (res *models.ActiveCoupon, err error) {
+func (repo *usercartRepositoryImpl) GetCouponByCode(ctx context.Context, code string) (res *models.Coupon, err error) {
 	query, err := repo.db.PrepareContext(ctx, GET_COUPON)
 	if err != nil {
 		log.Printf("[GetCouponByCode] failed to prepare query, err => %+v", err)
@@ -497,8 +497,8 @@ func mapHistory(r *sql.Rows) (res []*models.OrderHistoryMetadata, err error) {
 	return
 }
 
-func mapCoupon(r *sql.Row) (res *models.ActiveCoupon, err error) {
-	res = &models.ActiveCoupon{}
+func mapCoupon(r *sql.Row) (res *models.Coupon, err error) {
+	res = &models.Coupon{}
 	err = r.Scan(&res.ID, &res.Code, &res.Amount, &res.ExpiredAt)
 	return
 }

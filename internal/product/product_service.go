@@ -19,7 +19,12 @@ type ProductService interface {
 	StoreNewCategory(ctx context.Context, data *dto.NewCategoryRequest) (err error)
 	UpdateCategory(ctx context.Context, data *dto.UpdateCategoryRequest) (err error)
 	DeleteCategory(ctx context.Context, id uint64) (err error)
-	GetActiveCoupons(ctx context.Context, limit int64, offset int64) (res dto.ActiveCoupons, err error)
+
+	GetActiveCoupons(ctx context.Context, limit int64, offset int64) (res dto.Coupons, err error)
+	GetAllCoupon(ctx context.Context, limit int64, offset int64) (res dto.Coupons, err error)
+	StoreNewCoupon(ctx context.Context, data *dto.Coupon) (err error)
+	UpdateCoupon(ctx context.Context, id int64, data *dto.Coupon) (err error)
+	DeleteCoupon(ctx context.Context, id int64) (err error)
 }
 
 func NewProductService(db *database.DatabaseClient) ProductService {

@@ -38,6 +38,10 @@ func (ps *ProductHandler) InitHandler() {
 
 	// Coupon
 	routes.HandleFunc("/coupons", ps.GetActiveCoupons()).Methods(http.MethodGet, http.MethodOptions)
+	protected.HandleFunc("/coupons/all", ps.GetAllCoupon()).Methods(http.MethodGet, http.MethodOptions)
+	protected.HandleFunc("/coupons", ps.StoreNewCoupon()).Methods(http.MethodPost, http.MethodOptions)
+	protected.HandleFunc("/coupons/{id}", ps.UpdateCoupon()).Methods(http.MethodPatch, http.MethodOptions)
+	protected.HandleFunc("/coupons/{id}", ps.DeleteCoupon()).Methods(http.MethodDelete, http.MethodOptions)
 }
 
 func NewProductHandler(r *mux.Router, p *mux.Router, ps ProductService) *ProductHandler {
@@ -271,5 +275,107 @@ func (handler *ProductHandler) GetActiveCoupons() http.HandlerFunc {
 		}
 
 		responseutil.WriteSuccessResponse(w, http.StatusOK, data)
+	}
+}
+
+func (handler *ProductHandler) GetAllCoupon() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query()
+
+		limit := query.Get("limit")
+		limitParsed, err := strconv.ParseInt(limit, 10, 64)
+		if err != nil && limit != "" {
+			panic(errors.ErrInvalidRequestBody)
+		} else if limit == "" {
+			limitParsed = 10
+		}
+
+		offset := query.Get("offset")
+		offsetParsed, err := strconv.ParseInt(offset, 10, 64)
+		if err != nil && offset != "" {
+			panic(errors.ErrInvalidRequestBody)
+		} else if offset == "" {
+			offsetParsed = 0
+		}
+
+		data, err := handler.ps.GetAllCoupon(r.Context(), limitParsed, offsetParsed)
+		if err != nil {
+			panic(err)
+		}
+
+		responseutil.WriteSuccessResponse(w, http.StatusOK, data)
+	}
+}
+
+func (prd *ProductHandler) StoreNewCoupon() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data := &dto.Coupon{}
+		err := json.NewDecoder(r.Body).Decode(&data)
+		if err != nil {
+			log.Printf("[StoreNewCoupon] failed to parse JSON data, err => %+v", err)
+			panic(err)
+		}
+
+		err = prd.ps.StoreNewCoupon(r.Context(), data)
+		if err != nil {
+			panic(err)
+		}
+
+		responseutil.WriteSuccessResponse(w, http.StatusOK, nil)
+	}
+}
+
+func (prd *ProductHandler) UpdateCoupon() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		routeVar := mux.Vars(r)
+		couponID, ok := routeVar["id"]
+		if !ok {
+			log.Printf("[UpdateCoupon] failed to parsed couponID data\n")
+			panic(errors.ErrInvalidRequestBody)
+		}
+
+		cidParsed, err := strconv.ParseInt(couponID, 10, 64)
+		if err != nil {
+			log.Printf("[UpdateCoupon] failed to convert couponID, err => %+v\n", err)
+			panic(errors.ErrInvalidRequestBody)
+		}
+
+		data := &dto.Coupon{}
+		err = json.NewDecoder(r.Body).Decode(&data)
+		if err != nil {
+			log.Printf("[UpdateCoupon] failed to parse JSON data, err => %+v", err)
+			panic(errors.ErrInvalidRequestBody)
+		}
+
+		err = prd.ps.UpdateCoupon(r.Context(), cidParsed, data)
+		if err != nil {
+			panic(err)
+		}
+
+		responseutil.WriteSuccessResponse(w, http.StatusOK, nil)
+	}
+}
+
+func (prd *ProductHandler) DeleteCoupon() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		routeVar := mux.Vars(r)
+		couponID, ok := routeVar["id"]
+		if !ok {
+			log.Printf("[DeleteCoupon] failed to parsed couponID data\n")
+			panic(errors.ErrInvalidRequestBody)
+		}
+
+		cidParsed, err := strconv.ParseInt(couponID, 10, 64)
+		if err != nil {
+			log.Printf("[DeleteCoupon] failed to convert couponID, err => %+v\n", err)
+			panic(errors.ErrInvalidRequestBody)
+		}
+
+		err = prd.ps.DeleteCoupon(r.Context(), cidParsed)
+		if err != nil {
+			panic(err)
+		}
+
+		responseutil.WriteSuccessResponse(w, http.StatusOK, nil)
 	}
 }

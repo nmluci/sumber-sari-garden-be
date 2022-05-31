@@ -37,7 +37,7 @@ type OrderHistoryMetadata struct {
 	StatusName string
 }
 
-type ActiveCoupon struct {
+type Coupon struct {
 	ID          uint64
 	Code        string
 	Amount      float32
@@ -47,4 +47,4 @@ type ActiveCoupon struct {
 
 type OrderDetails []*OrderDetail
 
-type ActiveCoupons []*ActiveCoupon
+type Coupons []*Coupon

@@ -131,7 +131,7 @@ func (handler *UsercartHandler) OrderHistory() http.HandlerFunc {
 		}
 
 		dStart := query.Get("dateStart")
-		dateStart, err := timeutil.ParseLocalTime(dStart, "2006-01-02 15:04:05")
+		dateStart, err := timeutil.ParseLocalTime(dStart, "2006-01-02")
 		if err != nil {
 			log.Printf("[OrderHistory] failed to parse dateStart data, err => %+v\n", err)
 			if dStart == "" {
@@ -140,7 +140,7 @@ func (handler *UsercartHandler) OrderHistory() http.HandlerFunc {
 		}
 
 		dEnd := query.Get("dateEnd")
-		dateEnd, err := timeutil.ParseLocalTime(dEnd, "2006-01-02 15:04:05")
+		dateEnd, err := timeutil.ParseLocalTime(dEnd, "2006-01-02")
 		if err != nil {
 			log.Printf("[OrderHistory] failed to parse dateEnd data, err => %+v\n", err)
 			if dEnd == "" {
@@ -258,4 +258,3 @@ func (handler *UsercartHandler) OrderHistoryAll() http.HandlerFunc {
 		responseutil.WriteSuccessResponse(w, http.StatusOK, data)
 	}
 }
-

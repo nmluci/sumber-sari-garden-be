@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/nmluci/sumber-sari-garden/internal/dto"
+	"github.com/nmluci/sumber-sari-garden/internal/global/util/authutil"
 	"github.com/nmluci/sumber-sari-garden/pkg/errors"
 )
 
@@ -61,6 +62,10 @@ func (prd *ProductServiceImpl) GetProductByID(ctx context.Context, id uint64) (r
 }
 
 func (prd *ProductServiceImpl) StoreNewProduct(ctx context.Context, data *dto.NewProductRequest) (err error) {
+	if priv := authutil.GetUserPrivFromCtx(ctx); priv != 1 {
+		panic(errors.ErrUserPriv)
+	}
+
 	res := data.ToEntity()
 	cat, err := prd.repo.GetCategoryByID(ctx, res.CategoryID)
 	if err != nil {
@@ -84,6 +89,10 @@ func (prd *ProductServiceImpl) StoreNewProduct(ctx context.Context, data *dto.Ne
 }
 
 func (prd *ProductServiceImpl) UpdateProduct(ctx context.Context, data *dto.UpdateProductRequest) (err error) {
+	if priv := authutil.GetUserPrivFromCtx(ctx); priv != 1 {
+		panic(errors.ErrUserPriv)
+	}
+
 	res := data.ToEntity()
 	cat, err := prd.repo.GetCategoryByID(ctx, res.CategoryID)
 	if err != nil {
@@ -106,6 +115,10 @@ func (prd *ProductServiceImpl) UpdateProduct(ctx context.Context, data *dto.Upda
 }
 
 func (prd *ProductServiceImpl) DeleteProduct(ctx context.Context, id uint64) (err error) {
+	if priv := authutil.GetUserPrivFromCtx(ctx); priv != 1 {
+		panic(errors.ErrUserPriv)
+	}
+
 	exist, err := prd.repo.GetProductByID(ctx, id)
 	if err != nil {
 		if exist == nil {
@@ -137,6 +150,10 @@ func (prd *ProductServiceImpl) GetAllCategory(ctx context.Context) (res dto.Cate
 }
 
 func (prd *ProductServiceImpl) StoreNewCategory(ctx context.Context, data *dto.NewCategoryRequest) (err error) {
+	if priv := authutil.GetUserPrivFromCtx(ctx); priv != 1 {
+		panic(errors.ErrUserPriv)
+	}
+
 	res := data.ToEntity()
 
 	// TODO: log new category by ID
@@ -149,6 +166,10 @@ func (prd *ProductServiceImpl) StoreNewCategory(ctx context.Context, data *dto.N
 }
 
 func (prd *ProductServiceImpl) UpdateCategory(ctx context.Context, data *dto.UpdateCategoryRequest) (err error) {
+	if priv := authutil.GetUserPrivFromCtx(ctx); priv != 1 {
+		panic(errors.ErrUserPriv)
+	}
+
 	res := data.ToEntity()
 	err = prd.repo.UpdateCategory(ctx, res)
 	if err != nil {
@@ -159,6 +180,10 @@ func (prd *ProductServiceImpl) UpdateCategory(ctx context.Context, data *dto.Upd
 }
 
 func (prd *ProductServiceImpl) DeleteCategory(ctx context.Context, id uint64) (err error) {
+	if priv := authutil.GetUserPrivFromCtx(ctx); priv != 1 {
+		panic(errors.ErrUserPriv)
+	}
+
 	cat, err := prd.repo.GetCategoryByID(ctx, id)
 	if err != nil {
 		if cat == nil {
@@ -178,12 +203,89 @@ func (prd *ProductServiceImpl) DeleteCategory(ctx context.Context, id uint64) (e
 	return
 }
 
-func (prd *ProductServiceImpl) GetActiveCoupons(ctx context.Context, limit int64, offset int64) (res dto.ActiveCoupons, err error) {
-	coupons, err := prd.repo.GetAllCoupon(ctx, limit, offset)
+func (prd *ProductServiceImpl) GetActiveCoupons(ctx context.Context, limit int64, offset int64) (res dto.Coupons, err error) {
+	coupons, err := prd.repo.GetActiveCoupon(ctx, limit, offset)
 	if err != nil {
-		log.Printf("[GetActiveCoupons] an error occured while fetching active coupons, err => %+v\n", err)
+		log.Printf("[GetCoupons] an error occured while fetching active coupons, err => %+v\n", err)
 		return
 	}
 
-	return dto.NewActiveCouponResponse(coupons)
+	return dto.NewCouponResponse(coupons, false)
+}
+
+func (prd *ProductServiceImpl) GetAllCoupon(ctx context.Context, limit int64, offset int64) (res dto.Coupons, err error) {
+	if priv := authutil.GetUserPrivFromCtx(ctx); priv != 1 {
+		panic(errors.ErrUserPriv)
+	}
+
+	coupons, err := prd.repo.GetAllCoupon(ctx, limit, offset)
+	if err != nil {
+		log.Printf("[GetAllCoupons] an error occured while fetching all coupon, err => %+v\n", err)
+		return
+	}
+
+	return dto.NewCouponResponse(coupons, true)
+}
+
+func (prd *ProductServiceImpl) StoreNewCoupon(ctx context.Context, data *dto.Coupon) (err error) {
+	if priv := authutil.GetUserPrivFromCtx(ctx); priv != 1 {
+		panic(errors.ErrUserPriv)
+	}
+
+	coupon := data.ToEntity()
+
+	if data, err := prd.repo.GetCouponByCode(ctx, coupon.Code); err != nil && err != errors.ErrInvalidResources {
+		log.Printf("[StoreNewCoupon] an error occured while checking code duplication, err => %+v\n", err)
+		return err
+	} else if data != nil {
+		log.Printf("[StoreNewCoupon] coupon already existed\n")
+		return errors.ErrInvalidRequestBody
+	}
+
+	err = prd.repo.StoreCoupon(ctx, coupon)
+	if err != nil {
+		log.Printf("[StoreNewCoupon] an error occured while storing new coupon, err => %+v\n", err)
+		return
+	}
+
+	return
+}
+
+func (prd *ProductServiceImpl) UpdateCoupon(ctx context.Context, id int64, data *dto.Coupon) (err error) {
+	if priv := authutil.GetUserPrivFromCtx(ctx); priv != 1 {
+		panic(errors.ErrUserPriv)
+	}
+
+	coupon := data.ToEntity()
+
+	if _, err := prd.repo.GetCouponByID(ctx, id); err != nil {
+		log.Printf("[UpdateCoupon] an error occured while checking coupon existence, id => %d, err => %+v\n", id, err)
+		return err
+	}
+
+	err = prd.repo.UpdateCoupon(ctx, id, coupon)
+	if err != nil {
+		log.Printf("[UpdateCoupon] an error occured while updating coupon data, id => %d, err => %+v\n", id, err)
+	}
+
+	return
+}
+
+func (prd *ProductServiceImpl) DeleteCoupon(ctx context.Context, id int64) (err error) {
+	if priv := authutil.GetUserPrivFromCtx(ctx); priv != 1 {
+		panic(errors.ErrUserPriv)
+	}
+
+	if _, err := prd.repo.GetCouponByID(ctx, id); err != nil {
+		log.Printf("[DeleteCoupon] an error occured while checking coupon existence, id => %d, err => %+v\n", id, err)
+		return err
+	}
+
+	err = prd.repo.DeleteCoupon(ctx, id)
+	if err != nil {
+		log.Printf("[DeleteCoupon] an error occured while deleting coupon data, id => %d, er => %+v\n", id, err)
+		return
+	}
+
+	return
 }
