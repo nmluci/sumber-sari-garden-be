@@ -22,9 +22,9 @@ type ProductHandler struct {
 
 func (ps *ProductHandler) InitHandler() {
 	routes := ps.r.PathPrefix(constant.INVENTORY_API_PATH).Subrouter()
-	protected := routes.NewRoute().Subrouter()
+	protected := ps.p.PathPrefix(constant.INVENTORY_API_PATH).Subrouter()
 	// Products
-	routes.HandleFunc("/products", ps.GetAllProduct()).Methods(http.MethodGet, http.MethodOptions)
+	routes.HandleFunc("/products", ps.GetAllProduct()).Methods(http.MethodPut, http.MethodOptions)
 	routes.HandleFunc("/products/{id}", ps.GetProductByID()).Methods(http.MethodGet, http.MethodOptions)
 	protected.HandleFunc("/products", ps.StoreNewProduct()).Methods(http.MethodPost, http.MethodOptions)
 	protected.HandleFunc("/products/{id}", ps.UpdateProduct()).Methods(http.MethodPatch, http.MethodOptions)

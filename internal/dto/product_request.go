@@ -58,7 +58,9 @@ func (dto *ProductSearchParams) ToEntity(cats models.ProductCategories) (params 
 		}
 	}
 
-	if dto.Order == 2 {
+	if dto.Order == 1 {
+		params.Order = "p.id"
+	} else if dto.Order == 2 {
 		params.Order = "p.price"
 	} else {
 		params.Order = "p.name"

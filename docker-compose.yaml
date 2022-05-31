@@ -1,4 +1,4 @@
-version: '3.9'
+version: '3.7'
 
 services:
   db:
@@ -12,6 +12,7 @@ services:
       - MYSQL_DATABASE=${DB_NAME}
     ports:
       - "${DB_PORT}:3306"
+    restart: unless-stopped
     volumes:
       - sumber_sari_volume:/var/lib/mysql
 
