@@ -31,6 +31,7 @@ func (handler *UsercartHandler) InitHandler() {
 	routes.HandleFunc("/verify/{id}", handler.VerifyOrder()).Methods(http.MethodPatch, http.MethodOptions)
 	routes.HandleFunc("/history", handler.OrderHistory()).Methods(http.MethodGet, http.MethodOptions)
 	routes.HandleFunc("/history/all", handler.OrderHistoryAll()).Methods(http.MethodGet, http.MethodOptions)
+	routes.HandleFunc("/history/{id}", handler.SpecificOrderHistoryById()).Methods(http.MethodGet, http.MethodOptions)
 }
 
 func NewUsercartHandler(r *mux.Router, us UsercartService) *UsercartHandler {
@@ -105,6 +106,30 @@ func (handler *UsercartHandler) Checkout() http.HandlerFunc {
 		}
 
 		responseutil.WriteSuccessResponse(w, http.StatusOK, nil)
+	}
+}
+
+func (handler *UsercartHandler) SpecificOrderHistoryById() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		productID, ok := vars["id"]
+		if !ok {
+			log.Printf("[SpecificOrderHistoryById] invalid productID\n")
+			panic(errors.ErrInvalidRequestBody)
+		}
+
+		parsedProductId, err := strconv.ParseUint(productID, 10, 64)
+		if err != nil {
+			log.Printf("[SpecificOrderHistoryById] error while parsed\n")
+			panic(errors.ErrInvalidRequestBody)
+		}
+
+		data, err := handler.us.SpecificOrderHistoryById(r.Context(), parsedProductId)
+		if err != nil {
+			panic(err)
+		}
+
+		responseutil.WriteSuccessResponse(w, http.StatusOK, data)
 	}
 }
 

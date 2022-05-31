@@ -22,6 +22,7 @@ type UsercartRepository interface {
 	UpdateItem(ctx context.Context, orderID uint64, productID uint64, qty uint64) (err error)
 	RemoveItem(ctx context.Context, orderID uint64, productID uint64) (err error)
 	GetHistoryMetadata(ctx context.Context, params dto.HistoryParams) (meta []*models.OrderHistoryMetadata, err error)
+	GetHistoryMetadataByID(ctx context.Context, productID uint64) (meta *models.OrderHistoryMetadata, err error)
 	GetCouponByCode(ctx context.Context, code string) (res *models.Coupon, err error)
 	Checkout(ctx context.Context, userID int64, orderID uint64, couponID *uint64) (err error)
 	VerifyOrder(ctx context.Context, orderID uint64) (err error)
@@ -49,6 +50,9 @@ var (
 		LEFT JOIN coupon c ON o.coupon_id=c.id WHERE o.status_id = ? GROUP BY o.id, o.user_id`
 
 	GET_H_METADATA = fmt.Sprintf("SELECT * FROM (%s HAVING o.user_id=? UNION %s HAVING o.user_id=? UNION %s HAVING o.user_id=?) t WHERE (t.created_at BETWEEN ? AND ?) LIMIT ? OFFSET ?",
+		HISTORY_METADATA, HISTORY_METADATA, HISTORY_METADATA)
+
+	GET_H_METADATA_BY_ID = fmt.Sprintf("SELECT * FROM (%s UNION %s UNION %s) t WHERE t.id=?",
 		HISTORY_METADATA, HISTORY_METADATA, HISTORY_METADATA)
 
 	GET_H_METADATA_ALL = fmt.Sprintf("SELECT * FROM (%s UNION %s UNION %s) t WHERE (t.created_at BETWEEN ? AND ?) LIMIT ? OFFSET ?",
@@ -274,6 +278,35 @@ func (repo *usercartRepositoryImpl) RemoveItem(ctx context.Context, orderID uint
 	}
 
 	return
+}
+
+func (repo *usercartRepositoryImpl) GetHistoryMetadataByID(ctx context.Context, productID uint64) (*models.OrderHistoryMetadata, error) {
+	query, err := repo.db.PrepareContext(ctx, GET_H_METADATA_BY_ID)
+	if err != nil {
+		log.Printf("[GetHistoryMetadataByID] failed to prepare query, err => %+v\n", err)
+		return nil, err
+	}
+
+	rows, err := query.QueryContext(ctx,
+		1,         // Cart
+		2,         // Unpaid
+		3,         // Paid
+		productID, // Filter
+	)
+	if err != nil {
+		log.Printf("[GetHistoryMetadataByID] failed to fetch order metadatas, err => %+v\n", err)
+		return nil, err
+	}
+
+	res := &models.OrderHistoryMetadata{}
+	rows.Next()
+	err = rows.Scan(&res.OrderID, &res.UserID, &res.OrderDate, &res.GrandTotal, &res.ItemCount, &res.CouponName, &res.StatusName)
+	if err != nil {
+		log.Printf("[mapHistory] an error occured while parsing query result, err => %+v\n", err)
+		return nil, err
+	}
+
+	return res, nil
 }
 
 func (repo *usercartRepositoryImpl) GetHistoryMetadata(ctx context.Context, params dto.HistoryParams) (meta []*models.OrderHistoryMetadata, err error) {

@@ -191,3 +191,35 @@ func NewTrxBrief(orders []*models.OrderMetadata) (res []*TrxBrief, err error) {
 
 	return
 }
+
+func NewOrderDetailsById(meta *models.OrderHistoryMetadata, orders models.OrderDetails) (res *TrxMetadata, err error) {
+	if len(orders) == 0 || meta == nil {
+		log.Printf("[NewOrderDetailsById] failed to encode response data due to incomplete data\n")
+		err = errors.ErrInvalidResources
+		return nil, err
+	}
+
+	res = &TrxMetadata{
+		OrderID:    meta.OrderID,
+		UserId:     meta.UserID,
+		OrderDate:  timeutil.FormatLocalTime(meta.OrderDate, "2006-01-02 15:04:05"),
+		Status:     meta.StatusName,
+		ItemCount:  meta.ItemCount,
+		GrandTotal: meta.GrandTotal,
+		Coupon:     meta.CouponName,
+	}
+
+	for _, val := range orders {
+		temp := &TrxItem{
+			ProductID:   val.ProductID,
+			ProductName: val.ProductName,
+			Price:       val.Price,
+			Qty:         val.Qty,
+			Subtotal:    val.SubTotal,
+		}
+
+		res.Items = append(res.Items, temp)
+	}
+
+	return res, nil
+}

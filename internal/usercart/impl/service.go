@@ -194,6 +194,29 @@ func (us *UsercartServiceImpl) Checkout(ctx context.Context, dto *dto.OrderCheck
 	return
 }
 
+func (us *UsercartServiceImpl) SpecificOrderHistoryById(ctx context.Context, productID uint64) (res *dto.TrxMetadata, err error) {
+	usrID := authutil.GetUserIDFromCtx(ctx)
+	if priv := authutil.GetUserPrivFromCtx(ctx); priv != 1 {
+		log.Printf("[SpecificOrderHistoryById] user doesn't have enough permission, user_id => %d\n", usrID)
+		err = errors.ErrUserPriv
+		return
+	}
+
+	meta, err := us.repo.GetHistoryMetadataByID(ctx, productID)
+	if err != nil {
+		log.Printf("[OrderHistory] an error occured while fetching histories' metadata, err => %+v\n", err)
+		return
+	}
+
+	orderInfo, err := us.repo.GetItemsByOrderID(ctx, productID)
+	if err != nil {
+		log.Printf("[SpecificOrderHistoryById] an error occured while fetching order's item, orderID => %d, err => %+v\n", productID, err)
+		return nil, err
+	}
+
+	return dto.NewOrderDetailsById(meta, orderInfo)
+}
+
 func (us *UsercartServiceImpl) OrderHistory(ctx context.Context, params dto.HistoryParams) (res *dto.OrderHistoryResponse, err error) {
 	usrID := authutil.GetUserIDFromCtx(ctx)
 	params.UserID = uint64(usrID)
