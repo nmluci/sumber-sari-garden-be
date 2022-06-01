@@ -1,1 +1,1 @@
-web: bin/go-getting-started
+web: sumber-sari-garden-be/cmd/main
