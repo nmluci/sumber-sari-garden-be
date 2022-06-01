@@ -32,7 +32,10 @@ var config Config
 func Init() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("ERROR Error while read environment variable file")
+		if _, exist := os.LookupEnv("SERVER_ADDRESS"); !exist {
+			log.Fatalf("ERROR Error while read environment variable file")
+		}
+		log.Printf("ERROR .env not found, fallback to system-wide ENV")
 	}
 
 	config.ServerAddress = os.Getenv("SERVER_ADDRESS")
