@@ -16,7 +16,7 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	log.Println("[main] starting server")
-	// config.Init() //! Uncomment this to local dev
+	config.Init()
 
 	conf := config.GetConfig()
 	root := mux.NewRouter()
