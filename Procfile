@@ -1,1 +1,1 @@
-web: go run cmd/main/main.go
+web: go build cmd/main/main.go
