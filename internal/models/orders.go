@@ -45,6 +45,13 @@ type Coupon struct {
 	ExpiredAt   time.Time
 }
 
+type Statistics struct {
+	DateStart time.Time
+	DateEnd   time.Time
+	Count     int64
+	Income    *float32
+}
+
 type OrderDetails []*OrderDetail
 
 type Coupons []*Coupon

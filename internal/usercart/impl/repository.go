@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/nmluci/sumber-sari-garden/internal/dto"
 	"github.com/nmluci/sumber-sari-garden/internal/models"
@@ -28,6 +29,7 @@ type UsercartRepository interface {
 	VerifyOrder(ctx context.Context, orderID uint64) (err error)
 	GetUnpaidOrder(ctx context.Context) (res []*models.OrderMetadata, err error)
 	GetHistoryMetadataAll(ctx context.Context, params dto.HistoryParams) (meta []*models.OrderHistoryMetadata, err error)
+	GetStatistics(ctx context.Context, dateStart time.Time, dateEnd time.Time) (res *models.Statistics, err error)
 }
 
 type usercartRepositoryImpl struct {
@@ -76,6 +78,8 @@ var (
 		COUNT(*) item_count FROM order_detail od LEFT JOIN product p ON od.product_id=p.id LEFT JOIN order_data o ON od.order_id=o.id
 		LEFT JOIN coupon c ON o.coupon_id=c.id WHERE o.status_id=2 GROUP BY o.id`
 	VERIFY_ORDER = `UPDATE order_data SET status_id=3 WHERE order_data.id=?`
+
+	COUNT_TRX = fmt.Sprintf("SELECT COUNT(*) as trx_total, SUM(t.grand_total) FROM (%s) t WHERE(t.created_at BETWEEN ? AND ?)", HISTORY_METADATA)
 )
 
 func NewUsercartRepository(db *database.DatabaseClient) *usercartRepositoryImpl {
@@ -141,7 +145,7 @@ func (repo *usercartRepositoryImpl) GetItemsByOrderID(ctx context.Context, order
 		return
 	}
 
-	log.Println(query)
+	// log.Println(query)
 
 	rows, err := query.QueryContext(ctx, orderID)
 	if err != nil {
@@ -155,7 +159,7 @@ func (repo *usercartRepositoryImpl) GetItemsByOrderID(ctx context.Context, order
 		return
 	}
 
-	log.Println(res)
+	// log.Println(res)
 
 	return
 }
@@ -313,19 +317,15 @@ func (repo *usercartRepositoryImpl) GetHistoryMetadataByID(ctx context.Context, 
 	return res, nil
 }
 
-func (repo *usercartRepositoryImpl) GetHistoryMetadata(ctx context.Context, params dto.HistoryParams) (meta []*models.OrderHistoryMetadata, err error) {
-	query, err := repo.db.PrepareContext(ctx, GET_H_METADATA)
+func (repo *usercartRepositoryImpl) GetHistoryMetadataAll(ctx context.Context, params dto.HistoryParams) (meta []*models.OrderHistoryMetadata, err error) {
+	query, err := repo.db.PrepareContext(ctx, GET_H_METADATA_ALL)
 	if err != nil {
 		log.Printf("[GetHistoryMetadata] failed to prepare query, err => %+v\n", err)
 		return
 	}
 
-	log.Println(query)
-
 	rows, err := query.QueryContext(ctx,
-		1, params.UserID, // Cart
-		2, params.UserID, // Unpaid
-		3, params.UserID, // Paid
+		1, 2, 3,
 		params.DateStart, params.DateEnd, params.Limit, params.Offset*params.Limit, // Filter
 	)
 
@@ -339,7 +339,39 @@ func (repo *usercartRepositoryImpl) GetHistoryMetadata(ctx context.Context, para
 		log.Printf("[GetHistoryMetadata] failed to parse order metadatas, err => %+v\n", err)
 		return
 	}
-	log.Println(meta)
+
+	return
+}
+
+func (repo *usercartRepositoryImpl) GetHistoryMetadata(ctx context.Context, params dto.HistoryParams) (meta []*models.OrderHistoryMetadata, err error) {
+	query, err := repo.db.PrepareContext(ctx, GET_H_METADATA)
+	if err != nil {
+		log.Printf("[GetHistoryMetadata] failed to prepare query, err => %+v\n", err)
+		return
+	}
+
+	// log.Println(query)
+
+	rows, err := query.QueryContext(ctx,
+		1, params.UserID, // Cart
+		2, params.UserID, // Unpaid
+		3, params.UserID, // Paid
+		params.DateStart, params.DateEnd, params.Limit, params.Offset*params.Limit, // Filter
+	)
+
+	log.Println(rows, err)
+
+	if err != nil {
+		log.Printf("[GetHistoryMetadata] failed to fetch order metadatas, err => %+v\n", err)
+		return
+	}
+
+	meta, err = mapHistory(rows)
+	if err != nil {
+		log.Printf("[GetHistoryMetadata] failed to parse order metadatas, err => %+v\n", err)
+		return
+	}
+	log.Println(meta, err)
 
 	return
 }
@@ -445,27 +477,12 @@ func (repo *usercartRepositoryImpl) GetUnpaidOrder(ctx context.Context) (res []*
 	return
 }
 
-func (repo *usercartRepositoryImpl) GetHistoryMetadataAll(ctx context.Context, params dto.HistoryParams) (meta []*models.OrderHistoryMetadata, err error) {
-	query, err := repo.db.PrepareContext(ctx, GET_H_METADATA_ALL)
-	if err != nil {
-		log.Printf("[GetHistoryMetadata] failed to prepare query, err => %+v\n", err)
-		return
-	}
+func (repo *usercartRepositoryImpl) GetStatistics(ctx context.Context, dateStart time.Time, dateEnd time.Time) (res *models.Statistics, err error) {
+	row := repo.db.QueryRowContext(ctx, COUNT_TRX, 3, dateStart, dateEnd)
 
-	rows, err := query.QueryContext(ctx,
-		1, 2, 3,
-		params.DateStart, params.DateEnd, params.Limit, params.Offset*params.Limit, // Filter
-	)
-
+	res, err = mapStatistic(row)
 	if err != nil {
-		log.Printf("[GetHistoryMetadata] failed to fetch order metadatas, err => %+v\n", err)
-		return
-	}
-
-	meta, err = mapHistory(rows)
-	if err != nil {
-		log.Printf("[GetHistoryMetadata] failed to parse order metadatas, err => %+v\n", err)
-		return
+		log.Printf("[GetStatistics] failed to fetch statistics, err => %+v\n", err)
 	}
 
 	return
@@ -524,6 +541,7 @@ func mapOrderDetail(r *sql.Row) (res *models.OrderDetail, err error) {
 func mapHistory(r *sql.Rows) (res []*models.OrderHistoryMetadata, err error) {
 	res = []*models.OrderHistoryMetadata{}
 
+	count := 0
 	for r.Next() {
 		temp := &models.OrderHistoryMetadata{}
 		err = r.Scan(&temp.OrderID, &temp.UserID, &temp.OrderDate, &temp.GrandTotal, &temp.ItemCount, &temp.CouponName, &temp.StatusName)
@@ -532,6 +550,11 @@ func mapHistory(r *sql.Rows) (res []*models.OrderHistoryMetadata, err error) {
 			return nil, err
 		}
 		res = append(res, temp)
+		count++
+	}
+
+	if count == 0 {
+		return nil, errors.ErrInvalidResources
 	}
 
 	return
@@ -540,5 +563,11 @@ func mapHistory(r *sql.Rows) (res []*models.OrderHistoryMetadata, err error) {
 func mapCoupon(r *sql.Row) (res *models.Coupon, err error) {
 	res = &models.Coupon{}
 	err = r.Scan(&res.ID, &res.Code, &res.Amount, &res.ExpiredAt)
+	return
+}
+
+func mapStatistic(r *sql.Row) (res *models.Statistics, err error) {
+	res = &models.Statistics{}
+	err = r.Scan(&res.Count, &res.Income)
 	return
 }

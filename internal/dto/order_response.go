@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/nmluci/sumber-sari-garden/internal/global/util/timeutil"
@@ -44,6 +45,18 @@ type Coupon struct {
 	Amount      float32 `json:"amount"`
 	ExpiredAt   string  `json:"expired_at"`
 	Description *string `json:"description"`
+}
+
+type StatisticsResponse struct {
+	Daily    StatisticData `json:"daily"`
+	Weekly   StatisticData `json:"weekly"`
+	Annually StatisticData `json:"annually"`
+}
+
+type StatisticData struct {
+	DateRange string  `json:"date_range"`
+	TrxCount  int64   `json:"count"`
+	TrxAmount float32 `json:"amount"`
 }
 
 type OrderHistoriesResponse []*TrxMetadata
@@ -222,4 +235,43 @@ func NewOrderDetailsById(meta *models.OrderHistoryMetadata, orders models.OrderD
 	}
 
 	return res, nil
+}
+
+func NewOrderStatistics(daily *models.Statistics, weekly *models.Statistics, annually *models.Statistics) (res *StatisticsResponse, err error) {
+	res = &StatisticsResponse{}
+
+	res.Daily = StatisticData{
+		DateRange: fmt.Sprintf("%s - %s", timeutil.FormatLocalTime(daily.DateStart, "2006-01-02"), timeutil.FormatLocalTime(daily.DateEnd, "2006-01-02")),
+		TrxCount:  daily.Count,
+	}
+
+	if daily.Income == nil {
+		res.Daily.TrxAmount = 0
+	} else {
+		res.Daily.TrxAmount = *daily.Income
+	}
+
+	res.Weekly = StatisticData{
+		DateRange: fmt.Sprintf("%s - %s", timeutil.FormatLocalTime(weekly.DateStart, "2006-01-02"), timeutil.FormatLocalTime(weekly.DateEnd, "2006-01-02")),
+		TrxCount:  weekly.Count,
+	}
+
+	if weekly.Income == nil {
+		res.Weekly.TrxAmount = 0
+	} else {
+		res.Weekly.TrxAmount = *weekly.Income
+	}
+
+	res.Annually = StatisticData{
+		DateRange: fmt.Sprintf("%s - %s", timeutil.FormatLocalTime(annually.DateStart, "2006-01-02"), timeutil.FormatLocalTime(annually.DateEnd, "2006-01-02")),
+		TrxCount:  annually.Count,
+	}
+
+	if annually.Income == nil {
+		res.Annually.TrxAmount = 0
+	} else {
+		res.Annually.TrxAmount = *annually.Income
+	}
+
+	return
 }

@@ -3,6 +3,7 @@ package impl
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/nmluci/sumber-sari-garden/internal/dto"
 	"github.com/nmluci/sumber-sari-garden/internal/global/util/authutil"
@@ -227,6 +228,8 @@ func (us *UsercartServiceImpl) OrderHistory(ctx context.Context, params dto.Hist
 		return
 	}
 
+	log.Println(meta, err)
+
 	items := models.OrderDetails{}
 	for _, itm := range meta {
 		orderInfo, err2 := us.repo.GetItemsByOrderID(ctx, itm.OrderID)
@@ -309,4 +312,48 @@ func (us *UsercartServiceImpl) OrderHistoryAll(ctx context.Context, params dto.H
 	}
 
 	return dto.NewOrderHistoriesResponse(meta, items)
+}
+
+func (us *UsercartServiceImpl) GetStatistics(ctx context.Context) (res *dto.StatisticsResponse, err error) {
+	usrID := authutil.GetUserIDFromCtx(ctx)
+	if priv := authutil.GetUserPrivFromCtx(ctx); priv != 1 {
+		log.Printf("[VerifyOrder] user doesn't have enough permission, user_id => %d\n", usrID)
+		err = errors.ErrUserPriv
+		return
+	}
+
+	now := time.Now()
+	dailyStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	dailyEnd := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 59, time.UTC)
+
+	dailyData, err := us.repo.GetStatistics(ctx, dailyStart, dailyEnd)
+	if err != nil {
+		log.Printf("[GetStatistics] an error occured while fetching daily insight, err => %+v\n", err)
+		return
+	} else {
+		dailyData.DateStart = dailyStart
+		dailyData.DateEnd = dailyEnd
+	}
+
+	weeklyData, err := us.repo.GetStatistics(ctx, (dailyStart.Add(-7 * 24 * time.Hour)), (dailyEnd))
+	if err != nil {
+		log.Printf("[GetStatistics] an error occured while fetching weekly insight, err => %+v\n", err)
+		return
+	} else {
+		weeklyData.DateStart = dailyStart.Add(-7 * 24 * time.Hour)
+		weeklyData.DateEnd = dailyEnd
+	}
+
+	annualStart := time.Date(now.Year()-1, now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	annualEnd := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 59, time.UTC)
+	annualData, err := us.repo.GetStatistics(ctx, annualStart, annualEnd)
+	if err != nil {
+		log.Printf("[GetStatistics] an error occured while fetching annual insight, err => %+v\n", err)
+		return
+	} else {
+		annualData.DateStart = annualStart
+		annualData.DateEnd = annualEnd
+	}
+
+	return dto.NewOrderStatistics(dailyData, weeklyData, annualData)
 }

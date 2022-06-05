@@ -32,6 +32,7 @@ func (handler *UsercartHandler) InitHandler() {
 	routes.HandleFunc("/history", handler.OrderHistory()).Methods(http.MethodGet, http.MethodOptions)
 	routes.HandleFunc("/history/all", handler.OrderHistoryAll()).Methods(http.MethodGet, http.MethodOptions)
 	routes.HandleFunc("/history/{id}", handler.SpecificOrderHistoryById()).Methods(http.MethodGet, http.MethodOptions)
+	routes.HandleFunc("/statistics", handler.GetStatistics()).Methods(http.MethodGet, http.MethodOptions)
 }
 
 func NewUsercartHandler(r *mux.Router, us UsercartService) *UsercartHandler {
@@ -276,6 +277,17 @@ func (handler *UsercartHandler) OrderHistoryAll() http.HandlerFunc {
 		}
 
 		data, err := handler.us.OrderHistoryAll(r.Context(), params)
+		if err != nil {
+			panic(err)
+		}
+
+		responseutil.WriteSuccessResponse(w, http.StatusOK, data)
+	}
+}
+
+func (handler *UsercartHandler) GetStatistics() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data, err := handler.us.GetStatistics(r.Context())
 		if err != nil {
 			panic(err)
 		}

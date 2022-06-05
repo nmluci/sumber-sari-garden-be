@@ -18,6 +18,7 @@ type UsercartService interface {
 	GetUnpaidOrder(ctx context.Context) (res []*dto.TrxBrief, err error)
 	OrderHistoryAll(ctx context.Context, params dto.HistoryParams) (res dto.OrderHistoriesResponse, err error)
 	SpecificOrderHistoryById(ctx context.Context, productID uint64) (res *dto.TrxMetadata, err error)
+	GetStatistics(ctx context.Context) (res *dto.StatisticsResponse, err error)
 }
 
 func NewUsercartService(db *database.DatabaseClient) UsercartService {
