@@ -230,7 +230,7 @@ func (us *UsercartServiceImpl) OrderHistory(ctx context.Context, params dto.Hist
 	items := models.OrderDetails{}
 	for _, itm := range meta {
 		orderInfo, err2 := us.repo.GetItemsByOrderID(ctx, itm.OrderID)
-		if err != nil {
+		if err2 != nil {
 			log.Printf("[OrderHistory] an error occured while fetching order's item, orderID => %d, err => %+v\n", itm.OrderID, err2)
 			return res, err2
 		}

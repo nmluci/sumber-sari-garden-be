@@ -141,6 +141,8 @@ func (repo *usercartRepositoryImpl) GetItemsByOrderID(ctx context.Context, order
 		return
 	}
 
+	log.Println(query)
+
 	rows, err := query.QueryContext(ctx, orderID)
 	if err != nil {
 		log.Printf("[GetItemsByOrderID] failed to fetch cart items, err => %+v\n", err)
@@ -152,6 +154,8 @@ func (repo *usercartRepositoryImpl) GetItemsByOrderID(ctx context.Context, order
 		log.Printf("[GetItemsByOrderID] failed to parse cart items, err => %+v\n", err)
 		return
 	}
+
+	log.Println(res)
 
 	return
 }
@@ -316,6 +320,8 @@ func (repo *usercartRepositoryImpl) GetHistoryMetadata(ctx context.Context, para
 		return
 	}
 
+	log.Println(query)
+
 	rows, err := query.QueryContext(ctx,
 		1, params.UserID, // Cart
 		2, params.UserID, // Unpaid
@@ -333,6 +339,7 @@ func (repo *usercartRepositoryImpl) GetHistoryMetadata(ctx context.Context, para
 		log.Printf("[GetHistoryMetadata] failed to parse order metadatas, err => %+v\n", err)
 		return
 	}
+	log.Println(meta)
 
 	return
 }
