@@ -51,6 +51,7 @@ type Coupon struct {
 type StatisticsResponse struct {
 	Daily    StatisticData `json:"daily"`
 	Weekly   StatisticData `json:"weekly"`
+	Monthly  StatisticData `json:"monthly"`
 	Annually StatisticData `json:"annually"`
 }
 
@@ -243,7 +244,7 @@ func NewOrderDetailsById(meta *models.OrderHistoryMetadata, orders models.OrderD
 	return res, nil
 }
 
-func NewOrderStatistics(daily *models.Statistics, weekly *models.Statistics, annually *models.Statistics) (res *StatisticsResponse, err error) {
+func NewOrderStatistics(daily *models.Statistics, weekly *models.Statistics, monthly *models.Statistics, annually *models.Statistics) (res *StatisticsResponse, err error) {
 	res = &StatisticsResponse{}
 
 	res.Daily = StatisticData{
@@ -266,6 +267,17 @@ func NewOrderStatistics(daily *models.Statistics, weekly *models.Statistics, ann
 		res.Weekly.TrxAmount = 0
 	} else {
 		res.Weekly.TrxAmount = *weekly.Income
+	}
+
+	res.Monthly = StatisticData{
+		DateRange: fmt.Sprintf("%s - %s", timeutil.FormatLocalTime(monthly.DateStart, "2006-01-02"), timeutil.FormatLocalTime(monthly.DateEnd, "2006-01-02")),
+		TrxCount:  monthly.Count,
+	}
+
+	if monthly.Income == nil {
+		res.Monthly.TrxAmount = 0
+	} else {
+		res.Monthly.TrxAmount = *monthly.Income
 	}
 
 	res.Annually = StatisticData{

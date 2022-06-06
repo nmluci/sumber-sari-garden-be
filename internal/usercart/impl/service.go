@@ -7,6 +7,7 @@ import (
 
 	"github.com/nmluci/sumber-sari-garden/internal/dto"
 	"github.com/nmluci/sumber-sari-garden/internal/global/util/authutil"
+	"github.com/nmluci/sumber-sari-garden/internal/global/util/timeutil"
 	"github.com/nmluci/sumber-sari-garden/internal/models"
 	"github.com/nmluci/sumber-sari-garden/pkg/errors"
 )
@@ -344,6 +345,15 @@ func (us *UsercartServiceImpl) GetStatistics(ctx context.Context) (res *dto.Stat
 		weeklyData.DateEnd = dailyEnd
 	}
 
+	monthData, err := us.repo.GetStatistics(ctx, timeutil.FirstDayOfMonth(dailyStart), timeutil.LastDayOfMonth(dailyStart))
+	if err != nil {
+		log.Printf("[GetStatistics] an error occured while fetching monthly insight, err => %+v\n", err)
+		return
+	} else {
+		monthData.DateStart = timeutil.FirstDayOfMonth(dailyStart)
+		monthData.DateEnd = timeutil.LastDayOfMonth(dailyStart)
+	}
+
 	annualStart := time.Date(now.Year()-1, now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	annualEnd := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 59, time.UTC)
 	annualData, err := us.repo.GetStatistics(ctx, annualStart, annualEnd)
@@ -355,5 +365,5 @@ func (us *UsercartServiceImpl) GetStatistics(ctx context.Context) (res *dto.Stat
 		annualData.DateEnd = annualEnd
 	}
 
-	return dto.NewOrderStatistics(dailyData, weeklyData, annualData)
+	return dto.NewOrderStatistics(dailyData, weeklyData, monthData, annualData)
 }
