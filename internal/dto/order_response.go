@@ -67,7 +67,7 @@ type CheckoutResponse struct {
 
 type OrderHistoriesResponse []*TrxMetadata
 
-type Coupons []*Coupon
+type Coupons map[string]*Coupon
 
 func NewOrderHistoriesResponse(meta []*models.OrderHistoryMetadata, items models.OrderDetails) (res OrderHistoriesResponse, err error) {
 	res = []*TrxMetadata{}
@@ -183,7 +183,7 @@ func NewCouponResponse(coupons models.Coupons, isAdmin bool) (res Coupons, err e
 			temp.ID = c.ID
 		}
 
-		res = append(res, temp)
+		res[c.Code] = temp
 	}
 
 	return
