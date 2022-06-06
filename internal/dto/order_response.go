@@ -3,6 +3,7 @@ package dto
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/nmluci/sumber-sari-garden/internal/global/util/timeutil"
 	"github.com/nmluci/sumber-sari-garden/internal/models"
@@ -57,6 +58,11 @@ type StatisticData struct {
 	DateRange string  `json:"date_range"`
 	TrxCount  int64   `json:"count"`
 	TrxAmount float32 `json:"amount"`
+}
+
+type CheckoutResponse struct {
+	Date    string `json:"string"`
+	OrderID uint64 `json:"orderID"`
 }
 
 type OrderHistoriesResponse []*TrxMetadata
@@ -271,6 +277,15 @@ func NewOrderStatistics(daily *models.Statistics, weekly *models.Statistics, ann
 		res.Annually.TrxAmount = 0
 	} else {
 		res.Annually.TrxAmount = *annually.Income
+	}
+
+	return
+}
+
+func NewCheckoutResponse(orderID uint64, orderDate time.Time) (res *CheckoutResponse, err error) {
+	res = &CheckoutResponse{
+		OrderID: orderID,
+		Date:    timeutil.FormatLocalTime(orderDate, "2006-01-02 15:04:05"),
 	}
 
 	return

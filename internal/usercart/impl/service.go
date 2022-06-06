@@ -119,14 +119,14 @@ func (us *UsercartServiceImpl) GetCart(ctx context.Context) (cart dto.UsercartRe
 	return dto.NewUsercartResponse(meta, orderInfo, items)
 }
 
-func (us *UsercartServiceImpl) Checkout(ctx context.Context, dto *dto.OrderCheckoutRequest) (err error) {
+func (us *UsercartServiceImpl) Checkout(ctx context.Context, req *dto.OrderCheckoutRequest) (res *dto.CheckoutResponse, err error) {
 	var (
 		couponID        = new(uint64)
 		orderID  uint64 = 0
 	)
 
 	usr := authutil.GetUserIDFromCtx(ctx)
-	data, coupon := dto.ToEntity()
+	data, coupon := req.ToEntity()
 
 	orderInfo, err := us.repo.GetCartByUserID(ctx, usr)
 	if err != nil && err != errors.ErrInvalidResources {
@@ -192,7 +192,7 @@ func (us *UsercartServiceImpl) Checkout(ctx context.Context, dto *dto.OrderCheck
 		return
 	}
 
-	return
+	return dto.NewCheckoutResponse(orderID, time.Now())
 }
 
 func (us *UsercartServiceImpl) SpecificOrderHistoryById(ctx context.Context, productID uint64) (res *dto.TrxMetadata, err error) {

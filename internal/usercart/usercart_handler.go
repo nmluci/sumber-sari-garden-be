@@ -101,12 +101,12 @@ func (handler *UsercartHandler) Checkout() http.HandlerFunc {
 			panic(err)
 		}
 
-		err = handler.us.Checkout(r.Context(), data)
+		res, err := handler.us.Checkout(r.Context(), data)
 		if err != nil {
 			panic(err)
 		}
 
-		responseutil.WriteSuccessResponse(w, http.StatusOK, nil)
+		responseutil.WriteSuccessResponse(w, http.StatusOK, res)
 	}
 }
 
