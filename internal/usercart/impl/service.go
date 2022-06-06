@@ -122,8 +122,8 @@ func (us *UsercartServiceImpl) GetCart(ctx context.Context) (cart dto.UsercartRe
 
 func (us *UsercartServiceImpl) Checkout(ctx context.Context, req *dto.OrderCheckoutRequest) (res *dto.CheckoutResponse, err error) {
 	var (
-		couponID        = new(uint64)
-		orderID  uint64 = 0
+		couponID *uint64 = nil
+		orderID  uint64  = 0
 	)
 
 	usr := authutil.GetUserIDFromCtx(ctx)
@@ -206,7 +206,7 @@ func (us *UsercartServiceImpl) SpecificOrderHistoryById(ctx context.Context, pro
 
 	meta, err := us.repo.GetHistoryMetadataByID(ctx, productID)
 	if err != nil {
-		log.Printf("[OrderHistory] an error occured while fetching histories' metadata, err => %+v\n", err)
+		log.Printf("[SpecificOrderHistoryById] an error occured while fetching histories' metadata, err => %+v\n", err)
 		return
 	}
 
@@ -228,8 +228,6 @@ func (us *UsercartServiceImpl) OrderHistory(ctx context.Context, params dto.Hist
 		log.Printf("[OrderHistory] an error occured while fetching histories' metadata, err => %+v\n", err)
 		return
 	}
-
-	log.Println(meta, err)
 
 	items := models.OrderDetails{}
 	for _, itm := range meta {
@@ -290,14 +288,14 @@ func (us *UsercartServiceImpl) GetUnpaidOrder(ctx context.Context) (res []*dto.T
 func (us *UsercartServiceImpl) OrderHistoryAll(ctx context.Context, params dto.HistoryParams) (res dto.OrderHistoriesResponse, err error) {
 	usrID := authutil.GetUserIDFromCtx(ctx)
 	if priv := authutil.GetUserPrivFromCtx(ctx); priv != 1 {
-		log.Printf("[VerifyOrder] user doesn't have enough permission, user_id => %d\n", usrID)
+		log.Printf("[OrderHistoryAll] user doesn't have enough permission, user_id => %d\n", usrID)
 		err = errors.ErrUserPriv
 		return
 	}
 
 	meta, err := us.repo.GetHistoryMetadataAll(ctx, params)
 	if err != nil {
-		log.Printf("[OrderHistory] an error occured while fetching histories' metadata, err => %+v\n", err)
+		log.Printf("[OrderHistoryAll] an error occured while fetching histories' metadata, err => %+v\n", err)
 		return
 	}
 
@@ -305,7 +303,7 @@ func (us *UsercartServiceImpl) OrderHistoryAll(ctx context.Context, params dto.H
 	for _, itm := range meta {
 		orderInfo, err := us.repo.GetItemsByOrderID(ctx, itm.OrderID)
 		if err != nil {
-			log.Printf("[OrderHistory] an error occured while fetching order's item, orderID => %d, err => %+v\n", itm.OrderID, err)
+			log.Printf("[OrderHistoryAll] an error occured while fetching order's item, orderID => %d, err => %+v\n", itm.OrderID, err)
 			return res, err
 		}
 

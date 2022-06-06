@@ -126,6 +126,7 @@ func NewOrderHistoryResponse(userID uint64, meta []*models.OrderHistoryMetadata,
 
 	for mi, m := range meta {
 		trx := &TrxMetadata{
+			UserId:     m.UserID,
 			OrderID:    m.OrderID,
 			OrderDate:  timeutil.FormatLocalTime(m.OrderDate, "2006-01-02 15:04:05"),
 			Status:     m.StatusName,

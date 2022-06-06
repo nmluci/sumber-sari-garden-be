@@ -51,13 +51,13 @@ var (
 		LEFT JOIN product p ON od.product_id=p.id LEFT JOIN order_data o ON od.order_id=o.id LEFT JOIN order_status s ON s.id=o.status_id
 		LEFT JOIN coupon c ON o.coupon_id=c.id WHERE o.status_id = ? GROUP BY o.id, o.user_id`
 
-	GET_H_METADATA = fmt.Sprintf("SELECT * FROM (%s HAVING o.user_id=? UNION %s HAVING o.user_id=? UNION %s HAVING o.user_id=?) t WHERE (t.created_at BETWEEN ? AND ?) LIMIT ? OFFSET ?",
+	GET_H_METADATA = fmt.Sprintf("SELECT * FROM (%s UNION %s UNION %s) t HAVING t.user_id=? ORDER BY t.created_at DESC LIMIT ? OFFSET ?",
 		HISTORY_METADATA, HISTORY_METADATA, HISTORY_METADATA)
 
 	GET_H_METADATA_BY_ID = fmt.Sprintf("SELECT * FROM (%s UNION %s UNION %s) t WHERE t.id=?",
 		HISTORY_METADATA, HISTORY_METADATA, HISTORY_METADATA)
 
-	GET_H_METADATA_ALL = fmt.Sprintf("SELECT * FROM (%s UNION %s UNION %s) t WHERE (t.created_at BETWEEN ? AND ?) LIMIT ? OFFSET ?",
+	GET_H_METADATA_ALL = fmt.Sprintf("SELECT * FROM (%s UNION %s UNION %s) t WHERE (t.created_at BETWEEN ? AND ?) ORDER BY t.created_at DESC LIMIT ? OFFSET ?",
 		HISTORY_METADATA, HISTORY_METADATA, HISTORY_METADATA)
 	// GET_H_METADATA = strings.Join([]string{HISTORY_METADATA_A, HISTORY_METADATA_B, HISTORY_METADATA_C}, " UNION ") + " WHERE (o.created_at BETWEEN ? AND ?) LIMIT ? OFFSET ?"
 
@@ -350,16 +350,10 @@ func (repo *usercartRepositoryImpl) GetHistoryMetadata(ctx context.Context, para
 		return
 	}
 
-	// log.Println(query)
-
 	rows, err := query.QueryContext(ctx,
-		1, params.UserID, // Cart
-		2, params.UserID, // Unpaid
-		3, params.UserID, // Paid
-		params.DateStart, params.DateEnd, params.Limit, params.Offset*params.Limit, // Filter
+		1, 2, 3,
+		params.UserID, params.Limit, params.Offset*params.Limit,
 	)
-
-	log.Println(rows, err)
 
 	if err != nil {
 		log.Printf("[GetHistoryMetadata] failed to fetch order metadatas, err => %+v\n", err)
