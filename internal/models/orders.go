@@ -19,6 +19,7 @@ type OrderDetail struct {
 	Qty         uint64
 	Disc        float32
 	SubTotal    float32
+	IsCheckout  bool
 }
 
 type OrderMetadata struct {

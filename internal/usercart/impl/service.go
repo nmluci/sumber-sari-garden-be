@@ -158,13 +158,14 @@ func (us *UsercartServiceImpl) Checkout(ctx context.Context, req *dto.OrderCheck
 	} else {
 		*couponID = couponInfo.ID
 	}
-	log.Println(err)
 
 	validItem := models.OrderDetails{}
 	for _, itm := range data {
 		for _, c := range items {
 			if itm.ProductID == c.ProductID && itm.Qty == c.Qty {
-				validItem = append(validItem, itm)
+				temp := itm
+				temp.IsCheckout = true
+				validItem = append(validItem, temp)
 				break
 			}
 		}
@@ -178,7 +179,15 @@ func (us *UsercartServiceImpl) Checkout(ctx context.Context, req *dto.OrderCheck
 		}
 
 		orderID = uint64(newID)
-		for _, itm := range items {
+		for _, itm := range validItem {
+			if itm.IsCheckout {
+				err = us.repo.RemoveItem(ctx, orderInfo.ID, itm.ProductID)
+				if err != nil {
+					log.Printf("[Checkout] an error occured while removing to be bought items, productID=%d, err => %+v\n", itm.ProductID, err)
+					return
+				}
+			}
+
 			err = us.repo.InsertItem(ctx, orderID, itm.ProductID, itm.Qty)
 			if err != nil {
 				log.Printf("[Checkout] an error occured while inserting items, productID=%d, err => %+v\n", itm.ProductID, err)

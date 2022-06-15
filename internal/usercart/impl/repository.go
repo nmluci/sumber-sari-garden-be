@@ -276,7 +276,7 @@ func (repo *usercartRepositoryImpl) RemoveItem(ctx context.Context, orderID uint
 
 	_, err = query.ExecContext(ctx, productID, orderID)
 	if err != nil {
-		log.Printf("[DeleteItem] failed to insert new item, orderID => %d, pid => %d, err => %+v\n", orderID, productID, err)
+		log.Printf("[DeleteItem] failed to remove item, orderID => %d, pid => %d, err => %+v\n", orderID, productID, err)
 		return
 	}
 
